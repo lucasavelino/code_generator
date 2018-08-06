@@ -1,0 +1,10 @@
+void setup()
+{
+    //Serial.begin(115200);
+    while (CAN_OK != CAN.begin(CAN_250KBPS)){}
+	for(unsigned int i = 0; i < N_KEY_HANDLERS; ++i)
+	{
+		pinMode(key_handlers[i].key, INPUT);
+	}
+}
+

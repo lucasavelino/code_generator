@@ -1,0 +1,9 @@
+#ifndef MSG_TYEPS_H
+#define MSG_TYEPS_H
+
+#include <stdint.h>
+#include "J1939Includes.h"
+
+[#DBMsgClassesDeclarationList]
+
+#endif // MSG_TYEPS_H

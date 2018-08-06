@@ -1,0 +1,23 @@
+  ALARM [#TaskName]_alarm {
+    COUNTER = SystemCounter;
+    ACTION = ACTIVATETASK {
+      TASK = [#TaskName];
+    };
+    AUTOSTART = TRUE {
+      ALARMTIME = [#TaskTimerTime];
+      CYCLETIME = [#TaskTimerTime];
+      APPMODE = std_app_mode;
+    };
+  };
+
+  TASK [#TaskName] {
+    PRIORITY = [#TaskPriority];
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 256;
+	RESOURCE = can_send_msg_queue_resource;
+	EVENT = can_send_msg_queue_empty;
+	EVENT = can_send_msg_queue_full;
+  };
+  

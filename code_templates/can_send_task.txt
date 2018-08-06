@@ -1,0 +1,10 @@
+TASK(can_send_task)
+{
+	J1939_MSG to_send_msg;
+	while(1)
+	{
+		can_send_msg_queue.receive(to_send_msg);
+		CAN.sendMsgBuf(to_send_msg.id, 1, 8, to_send_msg.data);
+	}
+}
+

@@ -1,0 +1,24 @@
+OIL_VERSION = "2.5" : "busmaster";
+
+CPU busmaster {
+  OS config {
+    STATUS = STANDARD;
+    BUILD = TRUE {
+      TRAMPOLINE_BASE_PATH = "[#TrampolineRootPath]";
+      APP_NAME = "[#ExeFileName]";
+      APP_SRC = "[#SrcFileName]";
+      CPPCOMPILER = "avr-g++";
+      COMPILER = "avr-gcc";
+      LINKER = "avr-gcc";
+      ASSEMBLER = "avr-gcc";
+      COPIER = "avr-objcopy";
+      SYSTEM = PYTHON;
+	  
+      LIBRARY = mcp_can;
+      LIBRARY = serial;
+    };
+    SYSTEM_CALL = TRUE;
+  };
+
+  APPMODE std_app_mode {};
+  

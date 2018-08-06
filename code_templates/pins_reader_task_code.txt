@@ -1,0 +1,11 @@
+TASK(pins_reader)
+{
+	for(unsigned int i = 0; i < N_KEY_HANDLERS; ++i)
+	{
+		if(digitalRead(key_handlers[i].key) == HIGH)
+		{
+			(*key_handlers[i].handler)(key_handlers[i].key);
+		}
+	}
+}
+

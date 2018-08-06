@@ -1,0 +1,9 @@
+class [#DBMsgName] : public J1939_MSG
+{
+public:
+	[#DBMsgName]()
+		: J1939_MSG([#DBMsgPGN]), [#DBMsgSignalsConstructorInitializerList]
+	{}
+	[#DBMsgSignalsDeclarationList]
+};
+
