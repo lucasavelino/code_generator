@@ -14,6 +14,7 @@ namespace code_generator
         using x3::double_;
         using x3::lexeme;
         using ascii::char_;
+        using x3::long_long;
 
         x3::rule<class timer_handler, ast::TimerHandler> const timer_handler = "timer_handler";
         auto const timer_handler_def =
@@ -61,9 +62,9 @@ namespace code_generator
                 >> ','
                 >> char_
                 >> ','
-                >> int_
+                >> long_long
                 >> ','
-                >> int_
+                >> long_long
                 >> ','
                 >> int_
                 >> ','

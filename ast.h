@@ -32,7 +32,7 @@ namespace code_generator
         struct SignalValue
         {
             std::string description;
-            unsigned int value;
+            long unsigned int value;
         };
 
         struct Signal
@@ -42,8 +42,8 @@ namespace code_generator
             unsigned int byte_index;
             unsigned int bit_no;
             char type;
-            long int max_val;
-            long int min_val;
+            long long int max_val;
+            long long int min_val;
             unsigned int byte_order;
             double offset;
             double scale_factor;
