@@ -37,7 +37,7 @@ int main(int argc, const char *argv[])
             .set_key_mapping(argv[11])
             .set_com_port(argv[12])
             .is_arduino_nano(std::string(argv[13]) == "y")
-            .flash(true)
+            .flash(false)
             .build();
     cd.execute();
     return 0;

@@ -290,9 +290,10 @@ public:
 	J1939Id                 id;
 	unsigned int 			dlc;
 	uint8_t            		data[length];
-
-	_J1939_MSG(uint32_t _id=0) 
-		: msgType(MSG_TYPE_BROADCAST), direction(DIR_RX), dlc(length)
+	
+	
+	_J1939_MSG(uint32_t _id=0, unsigned int dlc=length) 
+		: msgType(MSG_TYPE_BROADCAST), direction(DIR_RX), dlc(dlc)
 	{
 		id.setPGN(_id);
 		memset(data, 0, sizeof(data));

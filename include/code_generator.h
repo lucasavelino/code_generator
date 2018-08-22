@@ -68,6 +68,8 @@ namespace code_generator
             code_generator::CommandRunner goil_cmd_run{goil_exe_path.string(), output_folder_path.string(), {"--target=avr/arduino/uno", "--templates=" + boost::filesystem::relative(trampoline_goil_templates_path, output_folder_path).generic_string(), output_oil_file_name}};
             code_generator::CommandRunner make_cmd_run{"make.py", output_folder_path.string(), {}};
 
+            goil_cmd_run();
+            make_cmd_run();
             if(flash)
             {
                 std::vector<std::string> avrdude_parameters;
@@ -83,8 +85,6 @@ namespace code_generator
                 avrdude_parameters.push_back(flash_parameter.str());
 
                 code_generator::CommandRunner avrdude_cmd_run{"avrdude", output_folder_path.string(), avrdude_parameters};
-                goil_cmd_run();
-                make_cmd_run();
                 avrdude_cmd_run();
             }
         }
