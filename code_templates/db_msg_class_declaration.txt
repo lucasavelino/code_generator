@@ -1,8 +1,8 @@
-class [#DBMsgName] : public _J1939_MSG<[#DBMsgLength]>
+class [#DBMsgName] : public J1939_MSG
 {
 public:
 	[#DBMsgName]()
-		: J1939_MSG([#DBMsgPGN]), [#DBMsgSignalsConstructorInitializerList]
+		: J1939_MSG([#DBMsgPGN], [#DBMsgLength]), [#DBMsgSignalsConstructorInitializerList]
 	{}
 	[#DBMsgSignalsDeclarationList]
 };
