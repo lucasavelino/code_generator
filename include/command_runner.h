@@ -65,7 +65,7 @@ namespace code_generator
 //            }
 //            return to_return;
 //        }
-        void operator()()
+        void operator()() const
         {
             std::stringstream cmd_ss;
             cmd_ss << "cd " << current_directory << " && "<< command;

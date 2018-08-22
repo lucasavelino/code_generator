@@ -16,7 +16,7 @@ include_directories(lib/googletest/googlemock/include)
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(../include)
 
-set(HEADER_FILES ../include/ast.h ../include/command_runner.h ../include/cpp_file_generator.h ../include/msg_types_file_generator.h ../include/oil_file_generator.h ../include/parser.h ../include/replacer.h ../include/util.h)
+set(HEADER_FILES ../include/ast.h ../include/command_runner.h ../include/cpp_file_generator.h ../include/msg_types_file_generator.h ../include/oil_file_generator.h ../include/parser.h ../include/replacer.h ../include/util.h ../include/code_generator.h)
 set(SOURCE_FILES main_test.cpp util_test.cpp)
 add_executable(code_generator_tests ${HEADER_FILES} ${SOURCE_FILES})
 
