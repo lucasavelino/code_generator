@@ -59,6 +59,7 @@ namespace code_generator
                 }
                 Replacer db_msg_class_declaration_replacer{db_msg_class_declaration_file_name};
                 db_msg_class_declaration_replacer.add_tag("DBMsgName", msg.name)
+                        .add_tag("DBMsgLength", std::to_string(msg.length))
                         .add_tag("DBMsgPGN", std::to_string(msg.pgn))
                         .add_tag("DBMsgSignalsConstructorInitializerList", db_msg_signals_constructor_initializer_list.str())
                         .add_tag("DBMsgSignalsDeclarationList", db_msg_signals_declaration_list.str());

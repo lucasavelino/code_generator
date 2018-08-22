@@ -1,4 +1,4 @@
-class [#DBMsgName] : public J1939_MSG
+class [#DBMsgName] : public _J1939_MSG<[#DBMsgLength]>
 {
 public:
 	[#DBMsgName]()
