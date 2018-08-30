@@ -1,44 +1,32 @@
-#include "code_generator.h"
+#include "code_generator_wizard.h"
+#include <QApplication>
+#include "include/code_generator.h"
+#include <QDebug>
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
-    // argv[1] = C:\Users\Lucas Avelino\Desktop\ProjetoBusMaster1\EMS_NODE.def
-    // argv[2] = C:\Users\Lucas Avelino\Desktop\ProjetoBusMaster1\New_DatabaseJ19391.DBF
-    // argv[3] = oil_out.oil
-    // argv[4] = ../../Arduino/trampoline
-    // argv[5] = cpp_file.cpp
-    // argv[6] = trampuino_busmaster
-    // argv[7] = msg_types.h
-    // argv[8] = C:\Users\Lucas Avelino\Desktop\ProjetoBusMaster1\EMS_Node.cpp
-    // argv[9] = C:\Users\Lucas Avelino\Desktop\OutputFolder
-    // argv[10] = C:\Arduino\goil-windows\goil.exe
-    // argv[11] = {OnKey_i:4,OnKey_d:5}
-    // argv[12] = COM6
-    // argv[13] = y
-    if(argc != 14)
-    {
-        std::cout << "Usage: " << argv[0] << " <def_file_path> <DBF_file_path> <output_oil_file_path> "
-                  << "<trampoline_root_path> <output_cpp_file_path> <output_binary_file_path> "
-                  << "<output_msg_types_header_file_path> <source_cpp_file_path> "
-                  << "<output_folder> <goil_exe_path> <key_mapping_file_path> <COM_port> <arduino_nano(y/n)>\n\n";
-        return 0;
-    }
+    QApplication a(argc, argv);
+
     auto cd = code_generator::CodeGenerator::create()
-            .set_def_file_path(argv[1])
-            .set_dbf_file_path(argv[2])
-            .set_output_oil_file_name(argv[3])
-            .set_trampoline_root_path(argv[4])
-            .set_output_cpp_file_name(argv[5])
-            .set_output_exe_file_name(argv[6])
-            .set_output_msg_types_header_file_name(argv[7])
-            .set_cpp_src_file_path(argv[8])
-            .set_output_folder_path(argv[9])
-            .set_goil_exe_path(argv[10])
-            .set_key_mapping(argv[11])
-            .set_com_port(argv[12])
-            .is_arduino_nano(std::string(argv[13]) == "y")
+            .set_def_file_path("C:\\Users\\Lucas Avelino\\Desktop\\ProjetoBusMaster1\\EMS_NODE.def")
+            .set_dbf_file_path("C:\\Users\\Lucas Avelino\\Desktop\\ProjetoBusMaster1\\New_DatabaseJ19391.DBF")
+            .set_output_oil_file_name("oil_out.oil")
+            .set_trampoline_root_path("C:\\Arduino\\trampoline")
+            .set_output_cpp_file_name("cpp_file.cpp")
+            .set_output_exe_file_name("trampuino_busmaster")
+            .set_output_msg_types_header_file_name("msg_types.h")
+            .set_cpp_src_file_path("C:\\Users\\Lucas Avelino\\Desktop\\ProjetoBusMaster1\\EMS_Node.cpp")
+            .set_output_folder_path("C:\\Users\\Lucas Avelino\\Desktop\\OutputFolder")
+            .set_goil_exe_path("C:\\Arduino\\goil-windows\\goil.exe")
+            .set_key_mapping("{OnKey_i:4,OnKey_d:5}")
+            .set_com_port("COM6")
+            .is_arduino_nano(true)
             .flash(false)
             .build();
     cd.execute();
-    return 0;
+
+
+    CodeGeneratorWizard w;
+    w.show();
+    return a.exec();
 }

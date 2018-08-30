@@ -7,81 +7,90 @@
 #include <windows.h>
 #include <sstream>
 #include <cstdlib>
+#include <iostream>
+#include <QProcess>
+#include <QVector>
+#include <QList>
+#include <QDebug>
 
 namespace code_generator
 {
     class CommandRunner
     {
     public:
-        CommandRunner(std::string command, std::string current_directory, std::vector<std::string> parameters)
-                : command(std::move(command)), current_directory(std::move(current_directory)), parameters(std::move(parameters)),
-                  pif(), si()
+        CommandRunner(QString command, QList<QString> parameters = {})
+                : command(command), parameters(std::move(parameters)),
+                  env(QProcessEnvironment::systemEnvironment())
         {
-            ZeroMemory( &si, sizeof( si ) );
-            si.cb = sizeof( si );
         }
 
-//        bool operator()()
-//        {
-//            std::stringstream cmd_ss;
-//            //cmd_ss << command;
-//            auto first = true;
-//            for(const auto& param : parameters)
-//            {
-//                if(first)
-//                {
-//                    first = false;
-//                } else
-//                {
-//                    cmd_ss << " ";
-//                }
-//                cmd_ss << param;
-//            }
-//            auto cmd = cmd_ss.str();
-//            const auto cmd_lpstr = const_cast<LPSTR>(cmd.c_str());
-//            auto to_return = (TRUE == CreateProcess(command.c_str(), cmd_lpstr, NULL, NULL, FALSE, 0, NULL, current_directory.c_str(), &si, &pif));
-//            if(to_return)
-//            {
-//                CloseHandle(pif.hProcess);
-//                CloseHandle(pif.hThread);
-//            } else
-//            {
-//                LPVOID lpMsgBuf;
-//                LPVOID lpDisplayBuf;
-//                auto error = GetLastError();
-//
-//                FormatMessage(
-//                        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-//                        FORMAT_MESSAGE_FROM_SYSTEM |
-//                        FORMAT_MESSAGE_IGNORE_INSERTS,
-//                        NULL,
-//                        error,
-//                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-//                        (LPTSTR) &lpMsgBuf,
-//                        0, NULL );
-//                auto msg = static_cast<char *>(lpMsgBuf);
-//                std::cout << "Error " << error << ": " << msg << "\n";
-//                LocalFree(lpMsgBuf);
-//            }
-//            return to_return;
-//        }
-        void operator()() const
+        CommandRunner& set_directory(QString current_directory)
         {
-            std::stringstream cmd_ss;
-            cmd_ss << "cd " << current_directory << " && "<< command;
-            for(const auto& param : parameters)
+            cmd.setWorkingDirectory(current_directory);
+            return *this;
+        }
+
+        CommandRunner& add_environment_variable(QString var_name, QString var_value)
+        {
+            env.insert(var_name, var_value);
+            return *this;
+        }
+
+        CommandRunner& append_environment_variable(QString var_name, QString var_value)
+        {
+            auto old_value = env.value(var_name);
+            env.remove(var_name);
+            env.insert(var_name,old_value + ";" + var_value);
+            return *this;
+        }
+
+        CommandRunner& remove_environment_variable(QString var_name)
+        {
+            env.remove(var_name);
+            return *this;
+        }
+
+        CommandRunner& add_parameter(QString parameter)
+        {
+            parameters.push_back(parameter);
+            return *this;
+        }
+
+        CommandRunner& remove_parameter(QString parameter)
+        {
+            parameters.removeOne(parameter);
+            return *this;
+        }
+
+
+
+        void operator()()
+        {
+            cmd.setProcessEnvironment(env);
+            cmd.start(command, parameters);
+            if(!cmd.waitForStarted())
             {
-                cmd_ss << " " << param;
+                qDebug() << "Error while waiting for command " << command << "to start\n";
+                qDebug() << "Error: " << cmd.errorString();
+                return;
             }
-            std::cout << cmd_ss.str() << "\n\n";
-            system(cmd_ss.str().c_str());
+            if(!cmd.waitForFinished())
+            {
+                qDebug() << "Error while waiting for command " << command << "completion\n";
+                qDebug() << "Error: " << cmd.errorString();
+                return;
+            }
+            qDebug() << "Command run: " << command << parameters;
+            qDebug() << "Environment variables: " << QProcessEnvironment::systemEnvironment().toStringList();
+            qDebug() << "Working directory: " << cmd.workingDirectory();
+            qDebug() << "Output: " << cmd.readAll();
         }
     private:
-        std::string command;
-        std::string current_directory;
-        std::vector<std::string> parameters;
-        PROCESS_INFORMATION pif;
-        STARTUPINFO si;
+        QString command;
+        QString current_directory;
+        QList<QString> parameters;
+        QProcessEnvironment env;
+        QProcess cmd;
     };
 }
 

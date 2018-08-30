@@ -7,6 +7,8 @@
 #include <ostream>
 #include <algorithm>
 #include "util.h"
+#include <QResource>
+#include <QString>
 
 namespace code_generator
 {
@@ -17,44 +19,43 @@ namespace code_generator
         Replacer(const Replacer&) = default;
         Replacer& operator=(const Replacer&) = default;
 
-        explicit Replacer(const std::string &input_file_name)
-                : text{util::read_whole_file_as_string(input_file_name)}
+        explicit Replacer(const QString &input_file_name)
+                : text{util::read_resource(input_file_name)}
         {}
 
-        Replacer& add_tag(const std::string &tag, const std::string &value)
+        Replacer& add_tag(const QString &tag, const QString &value)
         {
             tags.emplace_back(tag, value);
             return *this;
         }
 
-        // To be used after replace_tags()
-        friend std::ostream& operator<<(std::ostream& os, const Replacer& printer)
+        friend QTextStream& operator<<(QTextStream& ostream, const Replacer& replacer)
         {
-            os << printer.text;
-            return os;
+            ostream << replacer.text;
+            return ostream;
         }
 
         // To be used after all tags are added with add_tag()
         void replace_tags()
         {
             std::vector<TagPosition> tag_replacement_positions;
-            std::string::size_type final_text_length = text.length();
-            std::string::size_type greater_increment_text_length = text.length();
+            QString::size_type final_text_length = text.length();
+            QString::size_type greater_increment_text_length = text.length();
             for(auto& tag : tags)
             {
-                const std::string full_tag{"[#" + tag.name + "]"};
-                unsigned int count_pos = 0;
-                auto tag_pos = text.find(full_tag);
-                while (tag_pos != std::string::npos)
+                const QString full_tag{"[#" + tag.name + "]"};
+                int count_pos = 0;
+                auto tag_pos = text.indexOf(full_tag);
+                while (tag_pos != -1)
                 {
                     tag_replacement_positions.emplace_back(tag,tag_pos);
-                    tag_pos = text.find(full_tag,tag_pos+full_tag.length());
+                    tag_pos = text.indexOf(full_tag,tag_pos+full_tag.length());
                     count_pos++;
                 }
                 greater_increment_text_length = std::max(greater_increment_text_length, text.length() - (full_tag.length() * count_pos) + (tag.value.length() * count_pos));
                 final_text_length = final_text_length - (full_tag.length() * count_pos) + (tag.value.length() * count_pos);
             }
-            std::string::size_type new_text_length = std::max(greater_increment_text_length,final_text_length);
+            QString::size_type new_text_length = std::max(greater_increment_text_length,final_text_length);
             if(new_text_length > text.length())
             {
                 text.reserve(new_text_length);
@@ -80,17 +81,17 @@ namespace code_generator
             Tag& operator=(const Tag&) = default;
             Tag(Tag&&) = default;
             Tag& operator=(Tag&&) = default;
-            Tag(std::string name, std::string value)
+            Tag(QString name, QString value)
                     : name(std::move(name)), value(std::move(value))
             {}
 
-            std::string name;
-            std::string value;
+            QString name;
+            QString value;
         };
 
         struct TagPosition
         {
-            TagPosition(Tag tag, std::string::size_type position)
+            TagPosition(Tag tag, QString::size_type position)
                     : tag(std::move(tag)), position(position)
             {}
 
@@ -102,10 +103,10 @@ namespace code_generator
 
 
             Tag tag;
-            std::string::size_type position{};
+            QString::size_type position{};
         };
 
-        std::string text;
+        QString text;
         std::vector<Tag> tags;
     };
 }

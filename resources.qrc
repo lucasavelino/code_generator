@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/arduino_uno.jpg</file>
+        <file>images/arduino_nano.jpg</file>
+        <file>target_header_files/J1939Includes.h</file>
+        <file>target_header_files/message_queue.h</file>
+        <file>target_header_files/windows_types.h</file>
+        <file>code_templates/can_send_task.txt</file>
+        <file>code_templates/can_send_task_oil.txt</file>
+        <file>code_templates/db_msg_class_declaration.txt</file>
+        <file>code_templates/db_msg_signal_construction.txt</file>
+        <file>code_templates/db_msg_signal_declaration.txt</file>
+        <file>code_templates/declarations.txt</file>
+        <file>code_templates/includes.txt</file>
+        <file>code_templates/key_handler_declaration.txt</file>
+        <file>code_templates/msg_types_header.txt</file>
+        <file>code_templates/oil_fim.txt</file>
+        <file>code_templates/oil_ini.txt</file>
+        <file>code_templates/pins_reader_task_code.txt</file>
+        <file>code_templates/pins_reader_task_oil.txt</file>
+        <file>code_templates/setup_func.txt</file>
+        <file>code_templates/timer_task_code.txt</file>
+        <file>code_templates/timer_task_oil.txt</file>
+    </qresource>
+</RCC>

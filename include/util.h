@@ -5,6 +5,9 @@
 #include <boost/spirit/home/support/iterators/istream_iterator.hpp>
 #include "parser.h"
 #include <boost/fusion/include/std_pair.hpp>
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
 
 namespace code_generator
 {
@@ -102,7 +105,18 @@ namespace code_generator
 
             str.assign((std::istreambuf_iterator<char>(t)),
                        std::istreambuf_iterator<char>());
-            return std::move(str);
+            return str;
+        }
+
+        QString read_resource(const QString& file_name)
+        {
+            QFile file(file_name);
+            if(!file.open(QFile::ReadOnly | QFile::Text))
+            {
+                qDebug() << "Could not open file " << file_name;
+                return "";
+            }
+            return QTextStream(&file).readAll();
         }
 
         std::vector<std::string> get_text_inside_delimited_block(const std::string& file_str, std::string _delimiter)
@@ -138,7 +152,7 @@ namespace code_generator
                 }
                 iter = last + end_comment.length();
             }
-            return std::move(texts);
+            return texts;
         }
 
         std::tuple<
@@ -261,7 +275,7 @@ namespace code_generator
                     >> '}';
             std::map<std::string, unsigned int> key_pin_map;
             phrase_parse(key_mapping_str.begin(), key_mapping_str.end(), key_pin_map_rule, space, key_pin_map);
-            return std::move(key_pin_map);
+            return key_pin_map;
         }
     };
 }
