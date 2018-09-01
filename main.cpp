@@ -1,9 +1,9 @@
 #include "code_generator_wizard.h"
 #include <QApplication>
-#include "include/code_generator.h"
 #include <QDebug>
 #include <QCommandLineParser>
 #include <QFileInfo>
+#include <code_generator.h>
 
 int main(int argc, char *argv[])
 {
@@ -218,7 +218,8 @@ int main(int argc, char *argv[])
                 return 0;
             }
 
-            auto cd = code_generator::CodeGenerator::create()
+            code_generator::CodeGenerator cd;
+            code_generator::CodeGeneratorPropertiesManager(cd)
                     .set_def_file_path(def_src)
                     .set_dbf_file_path(dbf_src)
                     .set_output_oil_file_name(dest_prefix_name + ".oil")
@@ -233,7 +234,7 @@ int main(int argc, char *argv[])
                     .set_com_port(com_port)
                     .is_arduino_nano(arduino_nano)
                     .flash(flash)
-                    .build();
+                    .configure();
             cd.execute();
             return 0;
         }

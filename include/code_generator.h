@@ -1,11 +1,11 @@
 #ifndef CODE_GENERATOR_CODE_GENERATOR_H
 #define CODE_GENERATOR_CODE_GENERATOR_H
 
-#include "util.h"
 #include "oil_file_generator.h"
 #include "msg_types_file_generator.h"
 #include "cpp_file_generator.h"
 #include "command_runner.h"
+#include "util.h"
 #include <map>
 #include <QString>
 #include <QList>
@@ -13,15 +13,11 @@
 
 namespace code_generator
 {
-    class CodeGenerator;
-    class CodeGeneratorBuilder;
-
     class CodeGenerator
     {
     public:
-        static CodeGeneratorBuilder create();
-
-        void execute() const
+        CodeGenerator() = default;
+        QString execute_build() const
         {
             std::vector<code_generator::ast::TimerHandler> timer_handlers;
             std::vector<code_generator::ast::KeyHandler> key_handlers;
@@ -72,26 +68,52 @@ namespace code_generator
             goil_cmd_run.set_directory(output_folder_path);
             code_generator::CommandRunner make_cmd_run("python", {QDir(output_folder_path).absoluteFilePath("make.py")});
             make_cmd_run.set_directory(output_folder_path);
+
+            QString output_str;
+            QTextStream output(&output_str);
+
             goil_cmd_run();
             make_cmd_run();
+
+            output << goil_cmd_run.get_output() << make_cmd_run.get_output();
+            return output.readAll();
+        }
+
+        QString execute_flash() const
+        {
+            code_generator::CommandRunner avrdude_cmd_run{"avrdude"};
+            avrdude_cmd_run.add_parameter("-c arduino")
+                           .add_parameter("-p m328p")
+                           .add_parameter("-P " + com_port);
+            if(arduino_nano)
+            {
+                avrdude_cmd_run.add_parameter("-b57600");
+            }
+            avrdude_cmd_run.add_parameter(QString("-U flash:w:") + output_exe_file_name + ".hex");
+
+            avrdude_cmd_run.set_directory(output_folder_path);
+            avrdude_cmd_run();
+
+            QString output_str;
+            QTextStream output(&output_str);
+
+            output << avrdude_cmd_run.get_output();
+            return output.readAll();
+        }
+
+        QString execute() const
+        {
+            QString out;
+            QTextStream text_stream(&out);
+            text_stream << execute_build();
             if(flash)
             {
-                code_generator::CommandRunner avrdude_cmd_run{"avrdude"};
-                avrdude_cmd_run.add_parameter("-c arduino")
-                               .add_parameter("-p m328p")
-                               .add_parameter("-P " + com_port);
-                if(arduino_nano)
-                {
-                    avrdude_cmd_run.add_parameter("-b57600");
-                }
-                avrdude_cmd_run.add_parameter(QString("-U flash:w:") + output_exe_file_name + ".hex");
-
-                avrdude_cmd_run.set_directory(output_folder_path);
-                avrdude_cmd_run();
+                text_stream << execute_flash();
             }
+            return text_stream.readAll();
         }
+
     private:
-        CodeGenerator() = default;
         QString def_file_path;
         QString dbf_file_path;
         QString output_oil_file_path;
@@ -114,118 +136,148 @@ namespace code_generator
         QString com_port;
         bool arduino_nano{};
         bool flash{};
-        friend class CodeGeneratorBuilder;
+        friend class CodeGeneratorPropertiesManager;
     };
 
-    class CodeGeneratorBuilder
+    class CodeGeneratorPropertiesManager
     {
     public:
-        CodeGeneratorBuilder& set_dbf_file_path(const QString &dbf_file_path)
+        CodeGeneratorPropertiesManager(CodeGenerator& cd)
+            : cd{cd}
+        {}
+
+        CodeGeneratorPropertiesManager& set_dbf_file_path(QString dbf_file_path)
         {
-            cd.dbf_file_path = dbf_file_path;
+            cd.dbf_file_path = std::move(dbf_file_path);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_def_file_path(const QString &def_file_path)
+        CodeGeneratorPropertiesManager& set_def_file_path(QString def_file_path)
         {
-            cd.def_file_path = def_file_path;
+            cd.def_file_path = std::move(def_file_path);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_output_oil_file_name(QString output_oil_file_name)
+        CodeGeneratorPropertiesManager& set_output_oil_file_name(QString output_oil_file_name)
         {
             cd.output_oil_file_name = std::move(output_oil_file_name);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_trampoline_root_path(const QString& trampoline_root_path)
+        CodeGeneratorPropertiesManager& set_trampoline_root_path(QString trampoline_root_path)
         {
-            cd.trampoline_root_path = trampoline_root_path;
+            cd.trampoline_root_path = std::move(trampoline_root_path);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_output_cpp_file_name(QString output_cpp_file_name)
+        CodeGeneratorPropertiesManager& set_output_cpp_file_name(QString output_cpp_file_name)
         {
             cd.output_cpp_file_name = std::move(output_cpp_file_name);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_output_exe_file_name(QString output_exe_file_name)
+        CodeGeneratorPropertiesManager& set_output_exe_file_name(QString output_exe_file_name)
         {
             cd.output_exe_file_name = std::move(output_exe_file_name);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_output_msg_types_header_file_name(QString output_msg_types_header_file_name)
+        CodeGeneratorPropertiesManager& set_output_msg_types_header_file_name(QString output_msg_types_header_file_name)
         {
             cd.output_msg_types_header_file_name = std::move(output_msg_types_header_file_name);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_cpp_src_file_path(const QString& cpp_src_file_path)
+        CodeGeneratorPropertiesManager& set_cpp_src_file_path(QString cpp_src_file_path)
         {
-            cd.cpp_src_file_path = cpp_src_file_path;
+            cd.cpp_src_file_path = std::move(cpp_src_file_path);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_output_folder_path(const QString& output_folder_path)
+        CodeGeneratorPropertiesManager& set_output_folder_path(QString output_folder_path)
         {
-            cd.output_folder_path = output_folder_path;
+            cd.output_folder_path = std::move(output_folder_path);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_goil_exe_path(const QString& goil_exe_path)
+        CodeGeneratorPropertiesManager& set_goil_exe_path(QString goil_exe_path)
         {
-            cd.goil_exe_path = goil_exe_path;
+            cd.goil_exe_path = std::move(goil_exe_path);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_key_mapping(const std::string& key_mapping_str)
+        CodeGeneratorPropertiesManager& set_key_mapping(const std::string& key_mapping_str)
         {
             cd.key_mapping = util::get_key_mapping(key_mapping_str);
             return *this;
         }
 
-        CodeGeneratorBuilder& set_com_port(QString com_port)
+        CodeGeneratorPropertiesManager& set_com_port(QString com_port)
         {
             cd.com_port = std::move(com_port);
             return *this;
         }
 
-        CodeGeneratorBuilder& is_arduino_nano(bool arduino_nano)
+        CodeGeneratorPropertiesManager& is_arduino_nano(bool arduino_nano)
         {
             cd.arduino_nano = arduino_nano;
             return *this;
         }
 
-        CodeGeneratorBuilder& flash(bool flash)
+        CodeGeneratorPropertiesManager& flash(bool flash)
         {
             cd.flash = flash;
             return *this;
         }
 
-        CodeGenerator build()
+        CodeGeneratorPropertiesManager& configure()
         {
-            cd.output_oil_file_path = QDir(cd.output_folder_path).absoluteFilePath(cd.output_oil_file_name);
-            cd.trampoline_root_path_relative_to_output_folder = QDir(cd.output_folder_path).relativeFilePath(cd.trampoline_root_path);
-            cd.output_msg_types_header_file_path = QDir(cd.output_folder_path).absoluteFilePath(cd.output_msg_types_header_file_name);
-            cd.output_cpp_file_path = QDir(cd.output_folder_path).absoluteFilePath(cd.output_cpp_file_name);
+            if(cd.output_folder_path.isEmpty())
+            {
+                qDebug() << "Error: Path to output folder is empty.\n";
+                return *this;
+            } else
+            {
+                cd.J1939Includes_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("J1939Includes.h");
+                cd.message_queue_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("message_queue.h");
+                cd.windows_types_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("windows_types.h");
+                if(cd.output_oil_file_name.isEmpty())
+                {
+                    qDebug() << "Error: Output oil file name is empty\n";
+                    return *this;
+                }
+                cd.output_oil_file_path = QDir(cd.output_folder_path).absoluteFilePath(cd.output_oil_file_name);
+                if(cd.trampoline_root_path.isEmpty())
+                {
+                    qDebug() << "Error: Trampoline root path is empty\n";
+                    return *this;
+                }
+                cd.trampoline_root_path_relative_to_output_folder = QDir(cd.output_folder_path).relativeFilePath(cd.trampoline_root_path);
+                if(cd.output_msg_types_header_file_name.isEmpty())
+                {
+                    qDebug() << "Error: Output message types header file name is empty\n";
+                    return *this;
+                }
+                cd.output_msg_types_header_file_path = QDir(cd.output_folder_path).absoluteFilePath(cd.output_msg_types_header_file_name);
+                if(cd.output_cpp_file_name.isEmpty())
+                {
+                    qDebug() << "Error: Output cpp file name is empty\n";
+                    return *this;
+                }
+                cd.output_cpp_file_path = QDir(cd.output_folder_path).absoluteFilePath(cd.output_cpp_file_name);
+            }
+
+            if(cd.trampoline_root_path.isEmpty())
+            {
+                qDebug() << "Error: Trampoline root path is empty\n";
+                return *this;
+            }
             cd.trampoline_goil_templates_path = QDir(cd.trampoline_root_path).absoluteFilePath("goil/templates/");
-            cd.J1939Includes_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("J1939Includes.h");
-            cd.message_queue_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("message_queue.h");
-            cd.windows_types_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("windows_types.h");
-            return std::move(cd);
+            return *this;
         }
     private:
-        CodeGeneratorBuilder() = default;
-        CodeGenerator cd;
-        friend class CodeGenerator;
+        CodeGenerator& cd;
     };
-
-    CodeGeneratorBuilder CodeGenerator::create()
-    {
-        return CodeGeneratorBuilder{};
-    }
 }
 
 #endif //CODE_GENERATOR_CODE_GENERATOR_H

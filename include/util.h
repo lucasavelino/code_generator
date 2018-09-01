@@ -1,5 +1,6 @@
 #ifndef CODE_GENERATOR_UTIL_H
 #define CODE_GENERATOR_UTIL_H
+
 #include <iostream>
 #include <fstream>
 #include <boost/spirit/home/support/iterators/istream_iterator.hpp>
@@ -33,7 +34,7 @@ namespace code_generator
 
             void operator()(const std::string& unused_info)
             {
-
+                (void)unused_info;
             }
 
             void operator()(const code_generator::ast::AnyHandler& any_handler)
@@ -62,7 +63,7 @@ namespace code_generator
             std::string task_inner_code;
         };
 
-        std::tuple<
+        inline std::tuple<
                 std::vector<code_generator::ast::TimerHandler>,
                 std::vector<code_generator::ast::KeyHandler>
         > read_def(const std::string& file_name)
@@ -83,7 +84,7 @@ namespace code_generator
             return std::make_tuple(std::move(timers), std::move(keys));
         }
 
-        std::vector<code_generator::ast::Message> read_dbf(const std::string& file_name)
+        inline std::vector<code_generator::ast::Message> read_dbf(const std::string& file_name)
         {
             using boost::spirit::x3::ascii::space;
             using code_generator::parser::dbf;
@@ -94,7 +95,7 @@ namespace code_generator
             return std::move(dbf_msgs.messages);
         }
 
-        std::string read_whole_file_as_string(const std::string& file_name)
+        inline std::string read_whole_file_as_string(const std::string& file_name)
         {
             std::ifstream t(file_name);
             std::string str;
@@ -108,7 +109,7 @@ namespace code_generator
             return str;
         }
 
-        QString read_resource(const QString& file_name)
+        inline QString read_resource(const QString& file_name)
         {
             QFile file(file_name);
             if(!file.open(QFile::ReadOnly | QFile::Text))
@@ -119,7 +120,7 @@ namespace code_generator
             return QTextStream(&file).readAll();
         }
 
-        std::vector<std::string> get_text_inside_delimited_block(const std::string& file_str, std::string _delimiter)
+        inline std::vector<std::string> get_text_inside_delimited_block(const std::string& file_str, std::string _delimiter)
         {
             const std::string start = "/* Start " + _delimiter;
             const std::string end = "/* End " + _delimiter;
@@ -155,7 +156,7 @@ namespace code_generator
             return texts;
         }
 
-        std::tuple<
+        inline std::tuple<
                 std::vector<code_generator::util::TimerTask>,
                 std::vector<code_generator::util::KeyTask>,
                 std::vector<std::string>
@@ -207,14 +208,14 @@ namespace code_generator
             return std::make_tuple(timer_tasks,key_tasks,functions);
         }
 
-        std::string get_global_variables_declaration(const std::string& file_name)
+        inline std::string get_global_variables_declaration(const std::string& file_name)
         {
             const auto cpp_file_str{read_whole_file_as_string(file_name)};
             auto texts = get_text_inside_delimited_block(cpp_file_str, "J1939 global variable");
             return std::move(texts[0]);
         }
 
-        std::string get_appropriate_signal_type(const code_generator::ast::Signal& sig)
+        inline std::string get_appropriate_signal_type(const code_generator::ast::Signal& sig)
         {
             if(sig.type == 'B')
             {
@@ -260,7 +261,7 @@ namespace code_generator
             }
         }
 
-        std::map<std::string, unsigned int> get_key_mapping(const std::string& key_mapping_str)
+        inline std::map<std::string, unsigned int> get_key_mapping(const std::string& key_mapping_str)
         {
             namespace x3 = boost::spirit::x3;
             namespace ascii = boost::spirit::x3::ascii;

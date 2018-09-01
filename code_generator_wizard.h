@@ -3,6 +3,7 @@
 
 #include <QWizard>
 #include <QtSerialPort/QSerialPortInfo>
+#include <code_generator.h>
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;

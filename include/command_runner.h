@@ -20,7 +20,7 @@ namespace code_generator
     public:
         CommandRunner(QString command, QList<QString> parameters = {})
                 : command(command), parameters(std::move(parameters)),
-                  env(QProcessEnvironment::systemEnvironment())
+                  env(QProcessEnvironment::systemEnvironment()),output_str(), output(&output_str)
         {
         }
 
@@ -62,7 +62,10 @@ namespace code_generator
             return *this;
         }
 
-
+        QString get_output()
+        {
+            return output.readAll();
+        }
 
         void operator()()
         {
@@ -70,20 +73,22 @@ namespace code_generator
             cmd.start(command, parameters);
             if(!cmd.waitForStarted())
             {
-                qDebug() << "Error while waiting for command " << command << "to start\n";
-                qDebug() << "Error: " << cmd.errorString();
+                output << "Error while waiting for command " << command << "to start\n"
+                       << "Error: " << cmd.errorString();
+                qDebug() << output.readAll();
                 return;
             }
             if(!cmd.waitForFinished())
             {
-                qDebug() << "Error while waiting for command " << command << "completion\n";
-                qDebug() << "Error: " << cmd.errorString();
+                output << "Error while waiting for command " << command << "completion\n"
+                       << "Error: " << cmd.errorString();
+                qDebug() << output.readAll();
                 return;
             }
-            qDebug() << "Command run: " << command << parameters;
-            qDebug() << "Environment variables: " << QProcessEnvironment::systemEnvironment().toStringList();
-            qDebug() << "Working directory: " << cmd.workingDirectory();
-            qDebug() << "Output: " << cmd.readAll();
+            output << "Command run: " << command << parameters.join(" ") << "\n"
+                   << "Working directory: " << cmd.workingDirectory() << "\n"
+                   << "Output: " << cmd.readAll() << "\n\n";
+            qDebug() << output.readAll();
         }
     private:
         QString command;
@@ -91,6 +96,8 @@ namespace code_generator
         QList<QString> parameters;
         QProcessEnvironment env;
         QProcess cmd;
+        QString output_str;
+        QTextStream output;
     };
 }
 

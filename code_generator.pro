@@ -22,6 +22,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++1z no_keywords
 
+INCLUDEPATH += C:/boost_mingw/boost/include/boost-1_67
+INCLUDEPATH += include
+
 SOURCES += \
         main.cpp \
         code_generator_wizard.cpp
@@ -37,10 +40,6 @@ HEADERS += \
         include/parser.h \
         include/replacer.h \
         include/util.h
-
-FORMS +=
-
-INCLUDEPATH += C:/boost_mingw/boost/include/boost-1_67
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

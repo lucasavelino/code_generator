@@ -1,5 +1,4 @@
 #include <QtWidgets>
-
 #include "code_generator_wizard.h"
 
 CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
@@ -10,28 +9,42 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     setButtonText(WizardButton::CancelButton,tr("&Cancelar"));
     setButtonText(WizardButton::FinishButton,tr("&Finalizar"));
     setWizardStyle(WizardStyle::AeroStyle);
-    addPage(new IntroPage);
-    addPage(new BusmasterGeneratedInputFilesPage);
-    addPage(new TrampolineRTOSConfigsPage);
-    addPage(new OutputConfigsPage);
-    addPage(new PinsConfigPage);
-    addPage(new BuildPage);
-    addPage(new LoadPage);
-    addPage(new LastPage);
+    auto *intro_page = new IntroPage;
+    auto *busmaster_generated_input_files_page = new BusmasterGeneratedInputFilesPage;
+    auto *trampoline_rtos_configs_page = new TrampolineRTOSConfigsPage;
+    auto *output_configs_page = new OutputConfigsPage;
+    auto *pins_config_page = new PinsConfigPage;
+    auto *build_page = new BuildPage;
+    auto *load_page = new LoadPage;
+    auto *last_page = new LastPage;
+    addPage(intro_page);
+    addPage(busmaster_generated_input_files_page);
+    addPage(trampoline_rtos_configs_page);
+    addPage(output_configs_page);
+    addPage(pins_config_page);
+    addPage(build_page);
+    addPage(load_page);
+    addPage(last_page);
 
     setWindowTitle(tr("Code Generator"));
 }
 
 void CodeGeneratorWizard::accept()
 {
+//    auto def_file = field("def_file").toString();
+//    auto dbf_file = field("dbf_file").toString();
+//    auto cpp_file = field("cpp_file").toString();
 
+//    auto trampoline_root_dir = field("trampoline_root_dir").toString();
+//    auto goil_exe_file = field("goil_exe_file").toString();
+    QWizard::accept();
 }
 
 IntroPage::IntroPage(QWidget *parent)
     : QWizardPage(parent)
 {
     setTitle(tr("Bem vindo"));
-    label = new QLabel(tr("Esse wizard serve para realizar as configurações do Code Generator"));
+    label = new QLabel(tr("Esse assistente serve para realizar as configurações do Code Generator"));
     label->setWordWrap(true);
 
     QVBoxLayout *layout = new QVBoxLayout;
