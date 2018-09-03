@@ -1,20 +1,23 @@
 #include <QtWidgets>
+#include <QVector>
+#include <QPair>
 #include "code_generator_wizard.h"
 
 CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
-    QWizard(parent)
+    QWizard(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint)
 {
     setButtonText(WizardButton::NextButton,tr("&Avançar >"));
     setButtonText(WizardButton::BackButton,tr("< &Voltar"));
     setButtonText(WizardButton::CancelButton,tr("&Cancelar"));
     setButtonText(WizardButton::FinishButton,tr("&Finalizar"));
-    setWizardStyle(WizardStyle::AeroStyle);
+    setWindowIcon(QIcon(":/images/cg_icon.png"));
     auto *intro_page = new IntroPage;
     auto *busmaster_generated_input_files_page = new BusmasterGeneratedInputFilesPage;
     auto *trampoline_rtos_configs_page = new TrampolineRTOSConfigsPage;
     auto *output_configs_page = new OutputConfigsPage;
     auto *pins_config_page = new PinsConfigPage;
     auto *build_page = new BuildPage;
+    auto *com_port_page = new ComPortPage;
     auto *load_page = new LoadPage;
     auto *last_page = new LastPage;
     addPage(intro_page);
@@ -23,6 +26,7 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     addPage(output_configs_page);
     addPage(pins_config_page);
     addPage(build_page);
+    addPage(com_port_page);
     addPage(load_page);
     addPage(last_page);
 
@@ -31,12 +35,6 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
 
 void CodeGeneratorWizard::accept()
 {
-//    auto def_file = field("def_file").toString();
-//    auto dbf_file = field("dbf_file").toString();
-//    auto cpp_file = field("cpp_file").toString();
-
-//    auto trampoline_root_dir = field("trampoline_root_dir").toString();
-//    auto goil_exe_file = field("goil_exe_file").toString();
     QWizard::accept();
 }
 
@@ -100,7 +98,7 @@ BusmasterGeneratedInputFilesPage::BusmasterGeneratedInputFilesPage(QWidget *pare
                 dbf_file_line_edit->setText(dbf_file_name);
             });
 
-    cpp_file_label = new QLabel(tr("Arquivo de codigo fonte (.cpp):"));
+    cpp_file_label = new QLabel(tr("Arquivo de código fonte (.cpp):"));
     cpp_file_label->setMinimumWidth(150);
     cpp_file_label->setWordWrap(true);
     cpp_file_line_edit = new QLineEdit;
@@ -121,9 +119,9 @@ BusmasterGeneratedInputFilesPage::BusmasterGeneratedInputFilesPage(QWidget *pare
                 cpp_file_line_edit->setText(cpp_file_name);
             });
 
-    registerField("def_file", def_file_line_edit);
-    registerField("dbf_file", dbf_file_line_edit);
-    registerField("cpp_file", cpp_file_line_edit);
+    registerField("def_file*", def_file_line_edit);
+    registerField("dbf_file*", dbf_file_line_edit);
+    registerField("cpp_file*", cpp_file_line_edit);
 
     QGridLayout *layout = new QGridLayout;
     layout->addWidget(def_file_label, 0, 0);
@@ -137,6 +135,56 @@ BusmasterGeneratedInputFilesPage::BusmasterGeneratedInputFilesPage(QWidget *pare
     layout->addWidget(cpp_file_open_button, 2, 2);
     setLayout(layout);
 
+}
+
+bool BusmasterGeneratedInputFilesPage::validatePage()
+{
+    auto def_file = def_file_line_edit->text();
+    if(!def_file.endsWith(".def"))
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo de definições deve possuir extensão .def"));
+        msg.exec();
+        return false;
+    } else if(!QFileInfo(def_file).exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo de definições: '%1' não foi encontrado").arg(def_file));
+        msg.exec();
+        return false;
+    }
+
+    auto dbf_file = dbf_file_line_edit->text();
+    if(!dbf_file.endsWith(".DBF"))
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo do banco de dados de mensagens deve possuir extensão .DBF"));
+        msg.exec();
+        return false;
+    } else if(!QFileInfo(dbf_file).exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo do banco de dados de mensagens: '%1' não foi encontrado").arg(dbf_file));
+        msg.exec();
+        return false;
+    }
+
+    auto cpp_file = cpp_file_line_edit->text();
+    if(!cpp_file.endsWith(".cpp"))
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo de código fonte deve possuir extensão .cpp"));
+        msg.exec();
+        return false;
+    } else if(!QFileInfo(cpp_file).exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo de código fonte: '%1' não foi encontrado").arg(cpp_file));
+        msg.exec();
+        return false;
+    }
+
+    return true;
 }
 
 TrampolineRTOSConfigsPage::TrampolineRTOSConfigsPage(QWidget *parent)
@@ -188,8 +236,8 @@ TrampolineRTOSConfigsPage::TrampolineRTOSConfigsPage(QWidget *parent)
                 goil_exe_line_edit->setText(goil_exe_dir_name);
             });
 
-    registerField("trampoline_root_dir", trampoline_root_line_edit);
-    registerField("goil_exe_file", goil_exe_line_edit);
+    registerField("trampoline_root_dir*", trampoline_root_line_edit);
+    registerField("goil_exe_file*", goil_exe_line_edit);
 
     QGridLayout *layout = new QGridLayout;
     layout->addWidget(trampoline_root_label, 0, 0);
@@ -199,6 +247,41 @@ TrampolineRTOSConfigsPage::TrampolineRTOSConfigsPage(QWidget *parent)
     layout->addWidget(goil_exe_line_edit, 1, 1);
     layout->addWidget(goil_exe_open_button, 1, 2);
     setLayout(layout);
+}
+
+bool TrampolineRTOSConfigsPage::validatePage()
+{
+    auto trampoline_root_dir = trampoline_root_line_edit->text();
+    auto trampoline_root_dir_file_info = QFileInfo(trampoline_root_dir);
+    if(!trampoline_root_dir_file_info.exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O diretório base do trampolineRTOS: '%1' não foi encontrado").arg(trampoline_root_dir));
+        msg.exec();
+        return false;
+    } else if(!trampoline_root_dir_file_info.isDir())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo: '%1' não é um diretório").arg(trampoline_root_dir));
+        msg.exec();
+        return false;
+    }
+
+    auto goil_exe = goil_exe_line_edit->text();
+    if(!goil_exe.endsWith(".exe"))
+    {
+        QMessageBox msg;
+        msg.setText(tr("O executável do GOIL deve possuir extensão .exe"));
+        msg.exec();
+        return false;
+    } else if(!QFileInfo(goil_exe).exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O executável do GOIL: '%1' não foi encontrado").arg(goil_exe));
+        msg.exec();
+        return false;
+    }
+    return true;
 }
 
 OutputConfigsPage::OutputConfigsPage(QWidget *parent)
@@ -229,43 +312,53 @@ OutputConfigsPage::OutputConfigsPage(QWidget *parent)
                 output_folder_line_edit->setText(output_folder_dir_name);
             });
 
-    oil_file_label = new QLabel(tr("Nome do arquivo OIL (.oil):"));
-    oil_file_label->setMinimumWidth(150);
-    oil_file_label->setWordWrap(true);
-    oil_file_line_edit = new QLineEdit;
-    oil_file_line_edit->setFixedWidth(300);
-    oil_file_label->setBuddy(oil_file_line_edit);
+    output_prefix_label = new QLabel(tr("Nome prefixo do arquivo de saida (sem extensão):"));
+    output_prefix_label->setMinimumWidth(150);
+    output_prefix_label->setWordWrap(true);
+    output_prefix_line_edit = new QLineEdit;
+    output_prefix_line_edit->setFixedWidth(300);
+    output_prefix_label->setBuddy(output_prefix_line_edit);
 
-    cpp_file_label = new QLabel(tr("Nome do arquivo CPP (.cpp):"));
-    cpp_file_label->setMinimumWidth(150);
-    cpp_file_label->setWordWrap(true);
-    cpp_file_line_edit = new QLineEdit;
-    cpp_file_line_edit->setFixedWidth(300);
-    cpp_file_label->setBuddy(cpp_file_line_edit);
-
-    msg_types_header_file_label = new QLabel(tr("Nome do arquivo de cabeçalho das mensagens do banco de dados (.h):"));
-    msg_types_header_file_label->setMinimumWidth(150);
-    msg_types_header_file_label->setWordWrap(true);
-    msg_types_header_file_line_edit = new QLineEdit;
-    msg_types_header_file_line_edit->setFixedWidth(300);
-    msg_types_header_file_label->setBuddy(msg_types_header_file_line_edit);
-
-    registerField("output_dir", output_folder_line_edit);
-    registerField("oil_file_name", oil_file_line_edit);
-    registerField("cpp_file_name", cpp_file_line_edit);
-    registerField("msg_types_header_file_name", msg_types_header_file_line_edit);
+    registerField("output_dir*", output_folder_line_edit);
+    registerField("output_prefix_name*", output_prefix_line_edit);
 
     QGridLayout *layout = new QGridLayout;
     layout->addWidget(output_folder_label, 0, 0);
     layout->addWidget(output_folder_line_edit, 0, 1);
     layout->addWidget(output_folder_open_button, 0, 2);
-    layout->addWidget(oil_file_label, 1, 0);
-    layout->addWidget(oil_file_line_edit, 1, 1);
-    layout->addWidget(cpp_file_label, 2, 0);
-    layout->addWidget(cpp_file_line_edit, 2, 1);
-    layout->addWidget(msg_types_header_file_label, 3, 0);
-    layout->addWidget(msg_types_header_file_line_edit, 3, 1);
+    layout->addWidget(output_prefix_label, 1, 0);
+    layout->addWidget(output_prefix_line_edit, 1, 1);
     setLayout(layout);
+}
+
+bool OutputConfigsPage::validatePage()
+{
+    auto output_folder = output_folder_line_edit->text();
+    auto output_folder_file_info = QFileInfo(output_folder);
+    if(!output_folder_file_info.exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O diretório de saída: '%1' não foi encontrado").arg(output_folder));
+        msg.exec();
+        return false;
+    } else if(!output_folder_file_info.isDir())
+    {
+        QMessageBox msg;
+        msg.setText(tr("O arquivo: '%1' não é um diretório").arg(output_folder));
+        msg.exec();
+        return false;
+    }
+
+    auto output_prefix = output_prefix_line_edit->text();
+    if(output_prefix.contains("."))
+    {
+        QMessageBox msg;
+        msg.setText(tr("O nome prefixo do arquivo de saida não deve conter extensão"));
+        msg.exec();
+        return false;
+    }
+
+    return true;
 }
 
 PinsConfigPage::PinsConfigPage(QWidget *parent)
@@ -278,8 +371,8 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     arduino_select->addItem(tr("Arduino UNO"));
     arduino_select->addItem(tr("Arduino NANO"));
     arduino_img_label = new QLabel;
-    arduino_img_label->setPixmap(QPixmap(":/images/arduino_uno.jpg").
-                                 scaled(345,
+    arduino_img_label->setPixmap(QPixmap(":/images/arduino_uno.jpg")
+                                 .scaled(345,
                                         448,
                                         Qt::KeepAspectRatio
                                         )
@@ -291,16 +384,16 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
             {
                 if(index == 0)
                 {
-                    arduino_img_label->setPixmap(QPixmap(":/images/arduino_uno.jpg").
-                                                 scaled(345,
+                    arduino_img_label->setPixmap(QPixmap(":/images/arduino_uno.jpg")
+                                                 .scaled(345,
                                                         448,
                                                         Qt::KeepAspectRatio
                                                         )
                                                  );
                 } else
                 {
-                    arduino_img_label->setPixmap(QPixmap(":/images/arduino_nano.jpg").
-                                                 scaled(185,
+                    arduino_img_label->setPixmap(QPixmap(":/images/arduino_nano.jpg")
+                                                 .scaled(185,
                                                         358,
                                                         Qt::KeepAspectRatio
                                                         )
@@ -337,13 +430,13 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
 
     auto *layout = new QGridLayout;
     layout->addWidget(arduino_select, 0, 0);
-    layout->addWidget(arduino_img_label, 0, 4, 20, 1);
+    layout->addWidget(arduino_img_label, 0, 8, 20, 1);
     for (int i = 0; i < 20; ++i)
     {
-        layout->addWidget(arduino_pins_label[i], i+1, 0);
-        layout->addWidget(arduino_pins_checkbox[i], i+1, 1);
-        layout->addWidget(keys_label[i], i+1, 2);
-        layout->addWidget(arduino_pins_line_edit[i], i+1, 3);
+        layout->addWidget(arduino_pins_label[i], (i % 10) + 1, ((i / 10) * 4) + 0);
+        layout->addWidget(arduino_pins_checkbox[i], (i % 10) + 1, ((i / 10) * 4) + 1);
+        layout->addWidget(keys_label[i], (i % 10) + 1, ((i / 10) * 4) + 2);
+        layout->addWidget(arduino_pins_line_edit[i], (i % 10) + 1, ((i / 10) * 4) + 3);
     }
     setLayout(layout);
 }
@@ -354,15 +447,66 @@ BuildPage::BuildPage(QWidget *parent)
     setTitle(tr("Geração e compilação do código fonte"));
     setSubTitle(tr("Veja o resultado do processo de geração do código e compilação"));
 
-    build_text_browser = new QTextBrowser;
-    registerField("build_text_browser",build_text_browser);
+    build_text_edit = new QTextEdit;
+    build_text_edit->setReadOnly(true);
+    registerField("build_text_edit",build_text_edit,"plainText","textChanged");
     auto *layout = new QVBoxLayout;
-    layout->addWidget(build_text_browser);
+    layout->addWidget(build_text_edit);
     setLayout(layout);
 }
 
+void BuildPage::initializePage()
+{
+    auto def_file = field("def_file*").toString();
+    auto dbf_file = field("dbf_file*").toString();
+    auto cpp_file = field("cpp_file*").toString();
 
-LoadPage::LoadPage(QWidget *parent)
+    auto trampoline_root_dir = field("trampoline_root_dir*").toString();
+    auto goil_exe_file = field("goil_exe_file*").toString();
+
+    auto output_dir = field("output_dir*").toString();
+    auto output_prefix_name = field("output_prefix_name*").toString();
+
+    QString pins_associated_to_keys = "{";
+    bool first_pin = true;
+    for(int i = 0; i < 20; ++i)
+    {
+        if(field(QString("is_pin_%1_associated_to_a_key").arg(QString::number(i)))
+                .toBool())
+        {
+            if(first_pin)
+            {
+                first_pin = false;
+            } else
+            {
+                pins_associated_to_keys += ", ";
+            }
+            pins_associated_to_keys += "OnKey_" + field(QString("pin_%1_key").arg(QString::number(i))).toString()
+                    + ":" + QString::number(i);
+        }
+    }
+    pins_associated_to_keys += "}";
+
+    code_generator::CodeGenerator cd;
+    code_generator::CodeGeneratorPropertiesManager(cd)
+            .set_def_file_path(def_file)
+            .set_dbf_file_path(dbf_file)
+            .set_cpp_src_file_path(cpp_file)
+            .set_trampoline_root_path(trampoline_root_dir)
+            .set_goil_exe_path(goil_exe_file)
+            .set_output_folder_path(output_dir)
+            .set_output_cpp_file_name(output_prefix_name + ".cpp")
+            .set_output_oil_file_name(output_prefix_name + ".oil")
+            .set_output_msg_types_header_file_name("msg_types.h")
+            .set_output_exe_file_name(output_prefix_name + "_bin")
+            .set_key_mapping(pins_associated_to_keys.toStdString())
+            .configure();
+    QString build_output_str = cd.execute_build();
+    setField("build_text_edit",build_output_str);
+}
+
+
+ComPortPage::ComPortPage(QWidget *parent)
     : QWizardPage(parent)
 {
     setTitle(tr("Carregar executável"));
@@ -401,18 +545,43 @@ LoadPage::LoadPage(QWidget *parent)
             });
     com_ports_check_timer->start(3000);
 
-    load_text_browser = new QTextBrowser;
-
     registerField("com_port", com_port_select);
-    registerField("load_text_browser", load_text_browser);
 
     setButtonText(QWizard::NextButton, tr("Carregar &executável"));
 
     auto *layout = new QGridLayout;
     layout->addWidget(com_port_label, 0, 0);
     layout->addWidget(com_port_select, 0, 1);
-    layout->addWidget(load_text_browser, 1, 0, 1, 2);
     setLayout(layout);
+}
+
+LoadPage::LoadPage(QWidget *parent)
+    : QWizardPage(parent)
+{
+    setTitle(tr("Geração e compilação do código fonte"));
+    setSubTitle(tr("Veja o resultado do processo de geração do código e compilação"));
+
+    load_text_edit = new QTextEdit;
+    load_text_edit->setReadOnly(true);
+    registerField("load_text_edit",load_text_edit,"plainText","textChanged");
+    auto *layout = new QVBoxLayout;
+    layout->addWidget(load_text_edit);
+    setLayout(layout);
+}
+
+void LoadPage::initializePage()
+{
+    auto output_dir = field("output_dir*").toString();
+    auto output_prefix_name = field("output_prefix_name*").toString();
+    auto com_port = field("com_port").toString();
+
+    code_generator::CodeGenerator cd;
+    code_generator::CodeGeneratorPropertiesManager(cd)
+            .set_output_folder_path(output_dir)
+            .set_output_exe_file_name(output_prefix_name + "_bin")
+            .set_com_port(com_port);
+    QString load_output_str = cd.execute_flash();
+    setField("load_text_edit",load_output_str);
 }
 
 LastPage::LastPage(QWidget *parent)

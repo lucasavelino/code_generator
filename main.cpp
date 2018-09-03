@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
                    }))
     {
         CodeGeneratorWizard w;
-        w.show();
-        return app.exec();
+        w.exec();
+        return 0;
     } else
     {
         if(!command_line_parser.isSet(cpp_src_option) ||

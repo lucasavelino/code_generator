@@ -21,5 +21,6 @@
         <file>code_templates/setup_func.txt</file>
         <file>code_templates/timer_task_code.txt</file>
         <file>code_templates/timer_task_oil.txt</file>
+        <file>images/cg_icon.png</file>
     </qresource>
 </RCC>

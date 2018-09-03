@@ -75,20 +75,17 @@ namespace code_generator
             {
                 output << "Error while waiting for command " << command << "to start\n"
                        << "Error: " << cmd.errorString();
-                qDebug() << output.readAll();
                 return;
             }
             if(!cmd.waitForFinished())
             {
                 output << "Error while waiting for command " << command << "completion\n"
                        << "Error: " << cmd.errorString();
-                qDebug() << output.readAll();
                 return;
             }
             output << "Command run: " << command << parameters.join(" ") << "\n"
                    << "Working directory: " << cmd.workingDirectory() << "\n"
                    << "Output: " << cmd.readAll() << "\n\n";
-            qDebug() << output.readAll();
         }
     private:
         QString command;

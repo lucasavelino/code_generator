@@ -3,6 +3,7 @@
 
 #include <QWizard>
 #include <QtSerialPort/QSerialPortInfo>
+#include <QMessageBox>
 #include <code_generator.h>
 
 QT_BEGIN_NAMESPACE
@@ -14,7 +15,7 @@ class QRadioButton;
 class QPushButton;
 class QFileDialog;
 class QComboBox;
-class QTextBrowser;
+class QTextEdit;
 class QTimer;
 QT_END_NAMESPACE
 
@@ -44,6 +45,7 @@ class BusmasterGeneratedInputFilesPage : public QWizardPage
 
 public:
     BusmasterGeneratedInputFilesPage(QWidget *parent = nullptr);
+    bool validatePage() override;
 private:
     QLabel *def_file_label;
     QLabel *dbf_file_label;
@@ -62,7 +64,7 @@ class TrampolineRTOSConfigsPage : public QWizardPage
 
 public:
     TrampolineRTOSConfigsPage(QWidget *parent = nullptr);
-
+    bool validatePage() override;
 private:
     QLabel *trampoline_root_label;
     QLabel *goil_exe_label;
@@ -78,16 +80,12 @@ class OutputConfigsPage : public QWizardPage
 
 public:
     OutputConfigsPage(QWidget *parent = nullptr);
-
+    bool validatePage() override;
 private:
     QLabel *output_folder_label;
-    QLabel *oil_file_label;
-    QLabel *cpp_file_label;
-    QLabel *msg_types_header_file_label;
+    QLabel *output_prefix_label;
     QLineEdit *output_folder_line_edit;
-    QLineEdit *oil_file_line_edit;
-    QLineEdit *cpp_file_line_edit;
-    QLineEdit *msg_types_header_file_line_edit;
+    QLineEdit *output_prefix_line_edit;
     QPushButton *output_folder_open_button;
 };
 
@@ -113,9 +111,22 @@ class BuildPage : public QWizardPage
 
 public:
     BuildPage(QWidget *parent = nullptr);
+    void initializePage() override;
+private:
+    QTextEdit *build_text_edit;
+};
+
+class ComPortPage : public QWizardPage
+{
+    Q_OBJECT
+
+public:
+    ComPortPage(QWidget *parent = nullptr);
 
 private:
-    QTextBrowser *build_text_browser;
+    QLabel *com_port_label;
+    QComboBox *com_port_select;
+    QTimer *com_ports_check_timer;
 };
 
 class LoadPage : public QWizardPage
@@ -124,12 +135,9 @@ class LoadPage : public QWizardPage
 
 public:
     LoadPage(QWidget *parent = nullptr);
-
+    void initializePage() override;
 private:
-    QLabel *com_port_label;
-    QComboBox *com_port_select;
-    QTextBrowser *load_text_browser;
-    QTimer *com_ports_check_timer;
+    QTextEdit *load_text_edit;
 };
 
 class LastPage : public QWizardPage
