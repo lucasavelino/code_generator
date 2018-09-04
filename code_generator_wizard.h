@@ -95,14 +95,11 @@ class PinsConfigPage : public QWizardPage
 
 public:
     PinsConfigPage(QWidget *parent = nullptr);
-
+    void initializePage() override;
+    bool validatePage() override;
 private:
     QComboBox *arduino_select;
     QLabel *arduino_img_label;
-    QLabel *arduino_pins_label[20];
-    QCheckBox *arduino_pins_checkbox[20];
-    QLabel *keys_label[20];
-    QLineEdit *arduino_pins_line_edit[20];
 };
 
 class BuildPage : public QWizardPage

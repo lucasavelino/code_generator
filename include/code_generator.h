@@ -82,14 +82,14 @@ namespace code_generator
         QString execute_flash() const
         {
             code_generator::CommandRunner avrdude_cmd_run{"avrdude"};
-            avrdude_cmd_run.add_parameter("-c arduino")
-                           .add_parameter("-p m328p")
-                           .add_parameter("-P " + com_port);
+            avrdude_cmd_run.add_parameter("-carduino")
+                           .add_parameter("-pm328p")
+                           .add_parameter("-P" + com_port);
             if(arduino_nano)
             {
                 avrdude_cmd_run.add_parameter("-b57600");
             }
-            avrdude_cmd_run.add_parameter(QString("-U flash:w:") + output_exe_file_name + ".hex");
+            avrdude_cmd_run.add_parameter(QString("-Uflash:w:") + output_exe_file_name + ".hex");
 
             avrdude_cmd_run.set_directory(output_folder_path);
             avrdude_cmd_run();

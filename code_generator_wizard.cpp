@@ -1,6 +1,7 @@
 #include <QtWidgets>
 #include <QVector>
 #include <QPair>
+#include <QMap>
 #include "code_generator_wizard.h"
 
 CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
@@ -365,7 +366,7 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     : QWizardPage(parent)
 {
     setTitle(tr("Configuração dos pinos"));
-    setSubTitle(tr("Associar os pinos do arduino com os métodos OnKey gerados pelo busmaster"));
+    setSubTitle(tr("Associar os pinos do arduino com as teclas relacionadas ao métodos OnKey gerados pelo busmaster"));
 
     arduino_select = new QComboBox;
     arduino_select->addItem(tr("Arduino UNO"));
@@ -402,43 +403,83 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
 
             });
 
-    for (int i = 0; i < 20; ++i)
-    {
-        arduino_pins_label[i] = new QLabel(QString("Associar pino %1:").arg(QString::number(i)));
-        arduino_pins_checkbox[i] = new QCheckBox;
-        arduino_pins_line_edit[i] = new QLineEdit;
-        arduino_pins_label[i]->setBuddy(arduino_pins_checkbox[i]);
-        keys_label[i] = new QLabel(tr("à tecla:"));
-        keys_label[i]->setBuddy(arduino_pins_line_edit[i]);
-        arduino_pins_line_edit[i]->setEnabled(false);
-        connect(arduino_pins_checkbox[i],
-                &QCheckBox::toggled,
-                this,
-                [this,i](bool state)
-                {
-                    arduino_pins_line_edit[i]->setEnabled(state);
-                    if(!state)
-                    {
-                        arduino_pins_line_edit[i]->clear();
-                    }
-                });
-        registerField(QString("is_pin_%1_associated_to_a_key").arg(QString::number(i)), arduino_pins_checkbox[i]);
-        registerField(QString("pin_%1_key").arg(QString::number(i)), arduino_pins_line_edit[i]);
-    }
-
+    registerField("arduino_type", arduino_select, "currentText", "currentTextChanged");
     setButtonText(QWizard::NextButton, tr("C&ompilar"));
 
     auto *layout = new QGridLayout;
     layout->addWidget(arduino_select, 0, 0);
-    layout->addWidget(arduino_img_label, 0, 8, 20, 1);
-    for (int i = 0; i < 20; ++i)
+    layout->addWidget(arduino_img_label, 1, 0, 20, 1);
+    setLayout(layout);
+}
+
+void PinsConfigPage::initializePage()
+{
+    using size_type = std::vector<code_generator::ast::KeyHandler>::size_type;
+    auto def_file = field("def_file").toString();
+    std::vector<code_generator::ast::TimerHandler> timer_handlers;
+    std::vector<code_generator::ast::KeyHandler> key_handlers;
+    std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
+    (void)timer_handlers;
+    auto *layout = dynamic_cast<QGridLayout *>(this->layout());
+    if(key_handlers.size() > 0)
     {
-        layout->addWidget(arduino_pins_label[i], (i % 10) + 1, ((i / 10) * 4) + 0);
-        layout->addWidget(arduino_pins_checkbox[i], (i % 10) + 1, ((i / 10) * 4) + 1);
-        layout->addWidget(keys_label[i], (i % 10) + 1, ((i / 10) * 4) + 2);
-        layout->addWidget(arduino_pins_line_edit[i], (i % 10) + 1, ((i / 10) * 4) + 3);
+        auto *keys_label = new QLabel(tr("Tecla(s)"));
+        auto *pins_label = new QLabel(tr("Pino(s)"));
+        layout->addWidget(keys_label, 0, 1);
+        layout->addWidget(pins_label, 0, 2);
+    }
+    for(size_type i = 0; i < key_handlers.size(); ++i)
+    {
+        const auto& key_handler = key_handlers[i];
+        auto *key_label = new QLabel(tr("<%1>:").arg(QString::fromStdString(key_handler.key)));
+        key_label->setTextFormat(Qt::PlainText);
+        auto *key_select = new QComboBox;
+        for(int i = 0; i < 20; ++i)
+        {
+            key_select->addItem(QString::number(i));
+        }
+        key_label->setBuddy(key_select);
+
+        layout->addWidget(key_label, static_cast<int>(i) + 1, 1);
+        layout->addWidget(key_select, static_cast<int>(i) + 1, 2);
+        registerField(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key)), key_select, "currentText", "currentTextChanged");
     }
     setLayout(layout);
+}
+
+bool PinsConfigPage::validatePage()
+{
+    using size_type = std::vector<code_generator::ast::KeyHandler>::size_type;
+    auto def_file = field("def_file").toString();
+    std::vector<code_generator::ast::TimerHandler> timer_handlers;
+    std::vector<code_generator::ast::KeyHandler> key_handlers;
+    std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
+    (void)timer_handlers;
+    QMap<QString,int> contador_pinos_repetidos;
+    QStringList pinos;
+    for(size_type i = 0; i < key_handlers.size(); ++i)
+    {
+        const auto& key_handler = key_handlers[i];
+        pinos.push_back(field(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key))).toString());
+    }
+
+    for(const auto& pino : pinos)
+    {
+        contador_pinos_repetidos[pino]++;
+    }
+    const auto& contagem_pinos = contador_pinos_repetidos.values();
+    if(std::find_if(contagem_pinos.begin(),
+                    contagem_pinos.end(),
+                    [](int a){ return a > 1;})
+            != contagem_pinos.end())
+    {
+        QMessageBox msg;
+        msg.setText(tr("Um mesmo pino não deve ser associado a mais de uma tecla."));
+        msg.exec();
+        return false;
+    }
+
+    return true;
 }
 
 BuildPage::BuildPage(QWidget *parent)
@@ -457,33 +498,36 @@ BuildPage::BuildPage(QWidget *parent)
 
 void BuildPage::initializePage()
 {
-    auto def_file = field("def_file*").toString();
-    auto dbf_file = field("dbf_file*").toString();
-    auto cpp_file = field("cpp_file*").toString();
+    auto def_file = field("def_file").toString();
+    auto dbf_file = field("dbf_file").toString();
+    auto cpp_file = field("cpp_file").toString();
 
-    auto trampoline_root_dir = field("trampoline_root_dir*").toString();
-    auto goil_exe_file = field("goil_exe_file*").toString();
+    auto trampoline_root_dir = field("trampoline_root_dir").toString();
+    auto goil_exe_file = field("goil_exe_file").toString();
 
-    auto output_dir = field("output_dir*").toString();
-    auto output_prefix_name = field("output_prefix_name*").toString();
+    auto output_dir = field("output_dir").toString();
+    auto output_prefix_name = field("output_prefix_name").toString();
+
+
+    std::vector<code_generator::ast::TimerHandler> timer_handlers;
+    std::vector<code_generator::ast::KeyHandler> key_handlers;
+    std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
+    (void)timer_handlers;
 
     QString pins_associated_to_keys = "{";
     bool first_pin = true;
-    for(int i = 0; i < 20; ++i)
+    for(const auto& key_handler : key_handlers)
     {
-        if(field(QString("is_pin_%1_associated_to_a_key").arg(QString::number(i)))
-                .toBool())
+        if(first_pin)
         {
-            if(first_pin)
-            {
-                first_pin = false;
-            } else
-            {
-                pins_associated_to_keys += ", ";
-            }
-            pins_associated_to_keys += "OnKey_" + field(QString("pin_%1_key").arg(QString::number(i))).toString()
-                    + ":" + QString::number(i);
+            first_pin = false;
+        } else
+        {
+            pins_associated_to_keys += ",";
         }
+        auto key = QString::fromStdString(key_handler.key);
+        auto pin = field(tr("key_%1_pin").arg(key)).toString();
+        pins_associated_to_keys += "OnKey_" + key + ":" + pin;
     }
     pins_associated_to_keys += "}";
 
@@ -545,7 +589,7 @@ ComPortPage::ComPortPage(QWidget *parent)
             });
     com_ports_check_timer->start(3000);
 
-    registerField("com_port", com_port_select);
+    registerField("com_port", com_port_select, "currentText", "currentTextChanged");
 
     setButtonText(QWizard::NextButton, tr("Carregar &executável"));
 
@@ -571,15 +615,17 @@ LoadPage::LoadPage(QWidget *parent)
 
 void LoadPage::initializePage()
 {
-    auto output_dir = field("output_dir*").toString();
-    auto output_prefix_name = field("output_prefix_name*").toString();
+    auto output_dir = field("output_dir").toString();
+    auto output_prefix_name = field("output_prefix_name").toString();
+    auto arduino_type = field("arduino_type").toString();
     auto com_port = field("com_port").toString();
 
     code_generator::CodeGenerator cd;
     code_generator::CodeGeneratorPropertiesManager(cd)
             .set_output_folder_path(output_dir)
             .set_output_exe_file_name(output_prefix_name + "_bin")
-            .set_com_port(com_port);
+            .set_com_port(com_port)
+            .is_arduino_nano(arduino_type == "Arduino NANO");
     QString load_output_str = cd.execute_flash();
     setField("load_text_edit",load_output_str);
 }

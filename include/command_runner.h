@@ -20,7 +20,7 @@ namespace code_generator
     public:
         CommandRunner(QString command, QList<QString> parameters = {})
                 : command(command), parameters(std::move(parameters)),
-                  env(QProcessEnvironment::systemEnvironment()),output_str(), output(&output_str)
+                  env(QProcessEnvironment::systemEnvironment()),output_str()
         {
         }
 
@@ -64,11 +64,12 @@ namespace code_generator
 
         QString get_output()
         {
-            return output.readAll();
+            return output_str;
         }
 
         void operator()()
         {
+            QTextStream output(&output_str);
             cmd.setProcessEnvironment(env);
             cmd.start(command, parameters);
             if(!cmd.waitForStarted())
@@ -83,9 +84,14 @@ namespace code_generator
                        << "Error: " << cmd.errorString();
                 return;
             }
-            output << "Command run: " << command << parameters.join(" ") << "\n"
-                   << "Working directory: " << cmd.workingDirectory() << "\n"
-                   << "Output: " << cmd.readAll() << "\n\n";
+            output << "Command:\n" << command << " "
+                   << parameters.join(" ") << "\n\n"
+                   << "Working directory:\n"
+                   << cmd.workingDirectory() << "\n\n"
+                   << "Output:\n"
+                   << cmd.readAll() << "\n\n"
+                   << cmd.readAllStandardOutput() << "\n\n"
+                   << cmd.readAllStandardError() <<  "\n\n" ;
         }
     private:
         QString command;
@@ -94,7 +100,6 @@ namespace code_generator
         QProcessEnvironment env;
         QProcess cmd;
         QString output_str;
-        QTextStream output;
     };
 }
 

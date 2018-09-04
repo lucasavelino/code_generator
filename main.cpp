@@ -212,9 +212,9 @@ int main(int argc, char *argv[])
                          {
                             return com_port_info.portName() == com_port;
                          })
-                    != available_com_ports.end())
+                    == available_com_ports.end())
             {
-                qDebug() << "Error: <comport> ([" << com_port << "]) is not available!\n";
+                qDebug() << "Error: <comport> [" << com_port << "] is not available!\n";
                 return 0;
             }
 
@@ -235,7 +235,8 @@ int main(int argc, char *argv[])
                     .is_arduino_nano(arduino_nano)
                     .flash(flash)
                     .configure();
-            cd.execute();
+            auto log = cd.execute();
+            qDebug() << log;
             return 0;
         }
     }
