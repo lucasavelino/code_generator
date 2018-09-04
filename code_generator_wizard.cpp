@@ -12,6 +12,10 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     setButtonText(WizardButton::CancelButton,tr("&Cancelar"));
     setButtonText(WizardButton::FinishButton,tr("&Finalizar"));
     setWindowIcon(QIcon(":/images/cg_icon.png"));
+
+    // AeroStyle's (default, on windows 10) close button is not working properly
+    setWizardStyle(ModernStyle);
+
     auto *intro_page = new IntroPage;
     auto *busmaster_generated_input_files_page = new BusmasterGeneratedInputFilesPage;
     auto *trampoline_rtos_configs_page = new TrampolineRTOSConfigsPage;

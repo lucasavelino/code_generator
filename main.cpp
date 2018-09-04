@@ -17,12 +17,6 @@ int main(int argc, char *argv[])
     command_line_parser.addHelpOption();
     command_line_parser.addVersionOption();
 
-    QCommandLineOption gui_option(
-                QStringList() << "g" << "gui",
-                QApplication::translate("main", "Use graphical interface")
-                );
-    command_line_parser.addOption(gui_option);
-
     QCommandLineOption cpp_src_option(
                 QStringList() << "c" << "cppsrc",
                 QApplication::translate("main", "Specify the cpp source file path"),
@@ -103,17 +97,16 @@ int main(int argc, char *argv[])
 
     auto options = command_line_parser.optionNames();
 
-    if(command_line_parser.isSet(gui_option) ||
-       std::all_of(options.begin(),
+    if(std::none_of(options.begin(),
                    options.end(),
                    [&command_line_parser](QString& opt)
                    {
-                        return !command_line_parser.isSet(opt);
+                        return command_line_parser.isSet(opt);
                    }))
     {
         CodeGeneratorWizard w;
-        w.exec();
-        return 0;
+        w.show();
+        return app.exec();
     } else
     {
         if(!command_line_parser.isSet(cpp_src_option) ||
@@ -124,7 +117,7 @@ int main(int argc, char *argv[])
            !command_line_parser.isSet(goil_option) ||
            !command_line_parser.isSet(out_dir_option))
         {
-            qDebug() << "Error! If -g or --gui option is not set, must specifiy at least all of these otptions:\n"
+            qDebug() << "Error! If not using gui, must specifiy at least all of these otptions:\n"
                      << "\t- cppsrc\n"
                      << "\t- def\n"
                      << "\t- DBF\n"
