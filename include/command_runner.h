@@ -84,11 +84,8 @@ namespace code_generator
                        << "Error: " << cmd.errorString();
                 return;
             }
-            output << "Command:\n" << command << " "
+            output << "$ " << command << " "
                    << parameters.join(" ") << "\n\n"
-                   << "Working directory:\n"
-                   << cmd.workingDirectory() << "\n\n"
-                   << "Output:\n"
                    << cmd.readAll() << "\n\n"
                    << cmd.readAllStandardOutput() << "\n\n"
                    << cmd.readAllStandardError() <<  "\n\n" ;

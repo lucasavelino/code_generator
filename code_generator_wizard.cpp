@@ -2,6 +2,7 @@
 #include <QVector>
 #include <QPair>
 #include <QMap>
+#include <QSettings>
 #include "code_generator_wizard.h"
 
 CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
@@ -17,6 +18,7 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     setWizardStyle(ModernStyle);
 
     auto *intro_page = new IntroPage;
+    auto *load_configs_page = new LoadConfigsPage;
     auto *busmaster_generated_input_files_page = new BusmasterGeneratedInputFilesPage;
     auto *trampoline_rtos_configs_page = new TrampolineRTOSConfigsPage;
     auto *output_configs_page = new OutputConfigsPage;
@@ -26,6 +28,7 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     auto *load_page = new LoadPage;
     auto *last_page = new LastPage;
     addPage(intro_page);
+    addPage(load_configs_page);
     addPage(busmaster_generated_input_files_page);
     addPage(trampoline_rtos_configs_page);
     addPage(output_configs_page);
@@ -50,8 +53,41 @@ IntroPage::IntroPage(QWidget *parent)
     label = new QLabel(tr("Esse assistente serve para realizar as configurações do Code Generator"));
     label->setWordWrap(true);
 
-    QVBoxLayout *layout = new QVBoxLayout;
+    auto *layout = new QVBoxLayout;
     layout->addWidget(label);
+    setLayout(layout);
+}
+
+LoadConfigsPage::LoadConfigsPage(QWidget *parent)
+    : QWizardPage(parent)
+{
+    setTitle(tr("Configurações salvas"));
+    setSubTitle(tr("Deseja carregar configurações salvas da última vez que utilizou o assistente?"));
+
+    load_configs_label = new QLabel(tr("Carregar configurações salvas:"));
+    load_configs_label->setWordWrap(true);
+    load_configs_button = new QPushButton(tr("Carregar"));
+    load_configs_label->setBuddy(load_configs_button);
+    connect(load_configs_button,
+            &QPushButton::clicked,
+            this,
+            [this]()
+            {
+                QSettings settings;
+                setField("def_file", settings.value("def_file",""));
+                setField("dbf_file", settings.value("dbf_file",""));
+                setField("cpp_file", settings.value("cpp_file",""));
+                setField("trampoline_root_dir", settings.value("trampoline_root_dir",""));
+                setField("goil_exe_file", settings.value("goil_exe_file",""));
+                setField("output_dir", settings.value("output_dir",""));
+                setField("output_prefix_name", settings.value("output_prefix_name",""));
+                setField("arduino_type", settings.value("arduino_type",""));
+            }
+    );
+
+    auto *layout = new QGridLayout;
+    layout->addWidget(load_configs_label,0,0);
+    layout->addWidget(load_configs_button,0,1);
     setLayout(layout);
 }
 
@@ -189,6 +225,10 @@ bool BusmasterGeneratedInputFilesPage::validatePage()
         return false;
     }
 
+    QSettings settings;
+    settings.setValue("dbf_file", dbf_file);
+    settings.setValue("def_file", def_file);
+    settings.setValue("cpp_file", cpp_file);
     return true;
 }
 
@@ -286,6 +326,10 @@ bool TrampolineRTOSConfigsPage::validatePage()
         msg.exec();
         return false;
     }
+
+    QSettings settings;
+    settings.setValue("trampoline_root_dir", trampoline_root_dir);
+    settings.setValue("goil_exe_file", goil_exe);
     return true;
 }
 
@@ -363,6 +407,9 @@ bool OutputConfigsPage::validatePage()
         return false;
     }
 
+    QSettings settings;
+    settings.setValue("output_dir", output_folder);
+    settings.setValue("output_prefix_name", output_prefix);
     return true;
 }
 
@@ -376,12 +423,6 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     arduino_select->addItem(tr("Arduino UNO"));
     arduino_select->addItem(tr("Arduino NANO"));
     arduino_img_label = new QLabel;
-    arduino_img_label->setPixmap(QPixmap(":/images/arduino_uno.jpg")
-                                 .scaled(345,
-                                        448,
-                                        Qt::KeepAspectRatio
-                                        )
-                                 );
 
     connect(arduino_select,
             QOverload<int>::of(&QComboBox::activated),
@@ -413,11 +454,32 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     auto *layout = new QGridLayout;
     layout->addWidget(arduino_select, 0, 0);
     layout->addWidget(arduino_img_label, 1, 0, 20, 1);
+    auto *keys_label = new QLabel(tr("Tecla(s)"));
+    auto *pins_label = new QLabel(tr("Pino(s)"));
+    layout->addWidget(keys_label, 0, 1);
+    layout->addWidget(pins_label, 0, 2);
     setLayout(layout);
 }
 
 void PinsConfigPage::initializePage()
 {
+    if(arduino_select->currentIndex() == 0)
+    {
+        arduino_img_label->setPixmap(QPixmap(":/images/arduino_uno.jpg")
+                                     .scaled(345,
+                                            448,
+                                            Qt::KeepAspectRatio
+                                            )
+                                     );
+    } else
+    {
+        arduino_img_label->setPixmap(QPixmap(":/images/arduino_nano.jpg")
+                                     .scaled(185,
+                                            358,
+                                            Qt::KeepAspectRatio
+                                            )
+                                     );
+    }
     using size_type = std::vector<code_generator::ast::KeyHandler>::size_type;
     auto def_file = field("def_file").toString();
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
@@ -425,28 +487,24 @@ void PinsConfigPage::initializePage()
     std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
     (void)timer_handlers;
     auto *layout = dynamic_cast<QGridLayout *>(this->layout());
-    if(key_handlers.size() > 0)
-    {
-        auto *keys_label = new QLabel(tr("Tecla(s)"));
-        auto *pins_label = new QLabel(tr("Pino(s)"));
-        layout->addWidget(keys_label, 0, 1);
-        layout->addWidget(pins_label, 0, 2);
-    }
     for(size_type i = 0; i < key_handlers.size(); ++i)
     {
         const auto& key_handler = key_handlers[i];
-        auto *key_label = new QLabel(tr("<%1>:").arg(QString::fromStdString(key_handler.key)));
-        key_label->setTextFormat(Qt::PlainText);
-        auto *key_select = new QComboBox;
-        for(int i = 0; i < 20; ++i)
+        if(! field(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key))).isValid())
         {
-            key_select->addItem(QString::number(i));
-        }
-        key_label->setBuddy(key_select);
+            auto *key_label = new QLabel(tr("<%1>:").arg(QString::fromStdString(key_handler.key)));
+            key_label->setTextFormat(Qt::PlainText);
+            auto *key_select = new QComboBox;
+            for(int i = 0; i < 20; ++i)
+            {
+                key_select->addItem(QString::number(i));
+            }
+            key_label->setBuddy(key_select);
 
-        layout->addWidget(key_label, static_cast<int>(i) + 1, 1);
-        layout->addWidget(key_select, static_cast<int>(i) + 1, 2);
-        registerField(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key)), key_select, "currentText", "currentTextChanged");
+            layout->addWidget(key_label, static_cast<int>(i) + 1, 1);
+            layout->addWidget(key_select, static_cast<int>(i) + 1, 2);
+            registerField(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key)), key_select, "currentText", "currentTextChanged");
+        }
     }
     setLayout(layout);
 }
@@ -483,6 +541,8 @@ bool PinsConfigPage::validatePage()
         return false;
     }
 
+    QSettings settings;
+    settings.setValue("arduino_type", arduino_select->currentText());
     return true;
 }
 

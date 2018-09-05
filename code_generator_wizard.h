@@ -39,6 +39,18 @@ private:
     QLabel *label;
 };
 
+class LoadConfigsPage : public QWizardPage
+{
+    Q_OBJECT
+
+public:
+    LoadConfigsPage(QWidget *parent = nullptr);
+
+private:
+    QLabel *load_configs_label;
+    QPushButton *load_configs_button;
+};
+
 class BusmasterGeneratedInputFilesPage : public QWizardPage
 {
     Q_OBJECT

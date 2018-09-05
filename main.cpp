@@ -8,6 +8,7 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    QApplication::setOrganizationName("code_generator");
     QApplication::setApplicationName("Code Generator");
     QApplication::setApplicationVersion("0.1");
 
