@@ -3,10 +3,10 @@
 # Project created by QtCreator 2018-08-24T12:09:16
 #
 #-------------------------------------------------
+include(code_generator_tests/gtest_dependency.pri)
 
 QT       += core gui widgets serialport
 
-TARGET = code_generator
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -26,21 +26,30 @@ CONFIG += c++1z no_keywords
 INCLUDEPATH += C:/boost_mingw/boost/include/boost-1_67
 INCLUDEPATH += include
 
-SOURCES += \
-        main.cpp \
-        code_generator_wizard.cpp
+HEADERS += include/ast.h \
+           include/code_generator.h \
+           include/command_runner.h \
+           include/cpp_file_generator.h \
+           include/msg_types_file_generator.h \
+           include/oil_file_generator.h \
+           include/parser.h \
+           include/replacer.h \
+           include/util.h
 
-HEADERS += \
-        code_generator_wizard.h \
-        include/ast.h \
-        include/code_generator.h \
-        include/command_runner.h \
-        include/cpp_file_generator.h \
-        include/msg_types_file_generator.h \
-        include/oil_file_generator.h \
-        include/parser.h \
-        include/replacer.h \
-        include/util.h
+test {
+    TARGET = test
+    CONFIG += console
+    CONFIG -= app_bundle
+    CONFIG += thread
+    HEADERS += code_generator_tests/util_test.h
+    SOURCES += code_generator_tests/main_test.cpp
+    RESOURCES += code_generator_tests/test_resources.qrc
+} else {
+    TARGET = code_generator
+    HEADERS += code_generator_wizard.h
+    SOURCES += main.cpp \
+               code_generator_wizard.cpp
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
