@@ -6,7 +6,7 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b)) 
 
-bool setByteAt(uint8_t* data, uint16_t length, uint16_t index, uint8_t val)
+inline bool setByteAt(uint8_t* data, uint16_t length, uint16_t index, uint8_t val)
 {
 	if ( index >= length )
 	{
@@ -16,7 +16,7 @@ bool setByteAt(uint8_t* data, uint16_t length, uint16_t index, uint8_t val)
 	return true;
 }
 
-bool setWordAt(uint8_t* data, uint16_t length, uint16_t index, uint16_t val)
+inline bool setWordAt(uint8_t* data, uint16_t length, uint16_t index, uint16_t val)
 {
 	if ( index >= length/2 )
 	{
@@ -28,7 +28,7 @@ bool setWordAt(uint8_t* data, uint16_t length, uint16_t index, uint16_t val)
 	return true;
 }
 
-bool setLongAt(uint8_t* data, uint16_t length, uint16_t index, uint32_t val)
+inline bool setLongAt(uint8_t* data, uint16_t length, uint16_t index, uint32_t val)
 {
 	if ( index >= length/4 )
 	{
@@ -42,7 +42,7 @@ bool setLongAt(uint8_t* data, uint16_t length, uint16_t index, uint32_t val)
 	return true;
 }
 
-uint8_t getByteAt(uint8_t* data, uint16_t length, uint16_t index)
+inline uint8_t getByteAt(uint8_t* data, uint16_t length, uint16_t index)
 {
 	if ( index >= length )
 	{
@@ -51,7 +51,7 @@ uint8_t getByteAt(uint8_t* data, uint16_t length, uint16_t index)
 	return (((data[index])));
 }
 
-uint16_t getWordAt(uint8_t* data, uint16_t length, uint16_t index)
+inline uint16_t getWordAt(uint8_t* data, uint16_t length, uint16_t index)
 {
 	if ( index >= length-1 )
 	{
@@ -61,7 +61,7 @@ uint16_t getWordAt(uint8_t* data, uint16_t length, uint16_t index)
 	return  shRetVal;
 }
 
-uint32_t getLongAt(uint8_t* data, uint16_t length, uint16_t index)
+inline uint32_t getLongAt(uint8_t* data, uint16_t length, uint16_t index)
 {
 	if ( index >= length-3 )
 	{
@@ -280,6 +280,7 @@ public:
 		return (uint8_t)pgn;
 	}
 };
+
 
 template <const unsigned int length = 8>
 class _J1939_MSG
