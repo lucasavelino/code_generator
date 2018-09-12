@@ -45,7 +45,13 @@ namespace code_generator
             std::vector<code_generator::util::TimerTask> timer_tasks;
             std::vector<code_generator::util::KeyTask> key_tasks;
             std::vector<std::string> functions;
-            std::tie(timer_tasks, key_tasks, functions) = util::get_functions(cpp_src_file_path.toStdString(), timer_handlers, key_handlers, key_mapping);
+            bool error_on_key_mapping{false};
+            QString error_on_key_mapping_str;
+            std::tie(timer_tasks, key_tasks, functions, error_on_key_mapping_str) = util::get_functions(cpp_src_file_path.toStdString(), timer_handlers, key_handlers, key_mapping, error_on_key_mapping);
+            if(error_on_key_mapping)
+            {
+                return error_on_key_mapping_str;
+            }
             auto global_variables_declaration = util::get_global_variables_declaration(cpp_src_file_path.toStdString());
             code_generator::CppFileGenerator cpp_file_generator{output_cpp_file_path,
                                                                 R"(:/code_templates/includes.txt)",

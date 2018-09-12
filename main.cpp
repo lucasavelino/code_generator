@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
 
     command_line_parser.process(app);
 
-    auto options = command_line_parser.optionNames();
     const QStringList positionalArguments = command_line_parser.positionalArguments();
 
     if(positionalArguments.isEmpty())
@@ -162,7 +161,7 @@ int main(int argc, char *argv[])
             }
 
             auto available_com_ports = QSerialPortInfo::availablePorts();
-            if(std::find_if(available_com_ports.begin(),
+            if(flash && std::find_if(available_com_ports.begin(),
                          available_com_ports.end(),
                          [&com_port](QSerialPortInfo& com_port_info)
                          {

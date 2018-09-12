@@ -159,12 +159,17 @@ namespace code_generator
         inline std::tuple<
                 std::vector<code_generator::util::TimerTask>,
                 std::vector<code_generator::util::KeyTask>,
-                std::vector<std::string>
+                std::vector<std::string>,
+                QString
         > get_functions(const std::string &file_name,
                         const std::vector<code_generator::ast::TimerHandler>& timer_handlers,
                         const std::vector<code_generator::ast::KeyHandler>& key_handlers,
-                        const std::map<std::string, unsigned int>& key_mapping)
+                        const std::map<std::string, unsigned int>& key_mapping,
+                        bool& error)
         {
+            error = false;
+            QString error_str;
+            QTextStream error_ts(&error_str);
             using boost::spirit::x3::ascii::space;
             using code_generator::parser::handler_function;
             std::vector<std::string> functions;
@@ -198,14 +203,21 @@ namespace code_generator
                         timer_tasks.push_back(TimerTask{timer_handler->name, function.name, timer_handler->milliseconds, function.inner_code});
                     } else if(key_handlers.end() != key_handler)
                     {
-                        key_tasks.push_back(KeyTask{key_handler->key, key_mapping.at(function.name), function.name, function.parameters[0], function.inner_code});
+                        if(key_mapping.find(function.name) != key_mapping.end())
+                        {
+                            key_tasks.push_back(KeyTask{key_handler->key, key_mapping.at(function.name), function.name, function.parameters[0], function.inner_code});
+                        } else
+                        {
+                            error_ts << "Erro: A função " << QString::fromStdString(function.name) << " não existe no mapeamento de teclas para pinos\n";
+                            error = true;
+                        }
                     } else
                     {
                         functions.push_back(text);
                     }
                 }
             }
-            return std::make_tuple(timer_tasks,key_tasks,functions);
+            return std::make_tuple(timer_tasks,key_tasks,functions,error_ts.readAll());
         }
 
         inline std::string get_global_variables_declaration(const std::string& file_name)
