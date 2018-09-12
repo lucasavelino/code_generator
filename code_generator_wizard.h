@@ -121,6 +121,7 @@ class BuildPage : public QWizardPage
 public:
     BuildPage(QWidget *parent = nullptr);
     void initializePage() override;
+    bool validatePage() override;
 private:
     QTextEdit *build_text_edit;
 };

@@ -613,6 +613,28 @@ void BuildPage::initializePage()
     setField("build_text_edit",build_output_str);
 }
 
+bool BuildPage::validatePage()
+{
+    auto output_dir = field("output_dir").toString();
+    auto output_prefix_name = field("output_prefix_name").toString();
+    QFileInfo cpp_file_info(QDir(output_dir).absoluteFilePath(output_prefix_name + ".cpp"));
+    if(!cpp_file_info.exists())
+    {
+        QMessageBox msg;
+        msg.setText(tr("Houveram erros na geração/compilação de código para a plataforma"));
+        msg.exec();
+        return false;
+    }
+    QFileInfo output_file_info(QDir(output_dir).absoluteFilePath(output_prefix_name + "_bin"));
+    if(!output_file_info.exists() || output_file_info.lastModified() < cpp_file_info.lastModified())
+    {
+        QMessageBox msg;
+        msg.setText(tr("Houveram erros na geração/compilação de código para a plataforma"));
+        msg.exec();
+        return false;
+    }
+    return true;
+}
 
 ComPortPage::ComPortPage(QWidget *parent)
     : QWizardPage(parent)
