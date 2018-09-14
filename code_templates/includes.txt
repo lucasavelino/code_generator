@@ -4,4 +4,5 @@
 #include "J1939Includes.h"
 #include "[#MsgTypesHeaderFileName]"
 #include "windows_types.h"
+#include "mutual_exclusion_handler_trampoline.h"
 

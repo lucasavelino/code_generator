@@ -1,3 +1,9 @@
+/*************************************************************************************
+ *                                                                                   *
+ *    Must be an updated copy of the file target_header_files/message_queue.h        *
+ *                                                                                   *
+ *************************************************************************************/
+
 #ifndef MESSAGE_QUEUE_H
 #define MESSAGE_QUEUE_H
 

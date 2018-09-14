@@ -41,7 +41,12 @@ test {
     CONFIG += console
     CONFIG -= app_bundle
     CONFIG += thread
-    HEADERS += code_generator_tests/util_test.h
+    HEADERS += code_generator_tests/util_test.h \
+                code_generator_tests/msg_queue_test.h \
+                code_generator_tests/target_header_files_shadow/message_queue.h \
+                code_generator_tests/target_header_files_shadow/windows_types.h \
+                code_generator_tests/target_header_files_shadow/J1939Includes.h \
+                code_generator_tests/mocks/mutual_exclusion_handler_mock.h
     SOURCES += code_generator_tests/main_test.cpp
     RESOURCES += code_generator_tests/test_resources.qrc
 } else {

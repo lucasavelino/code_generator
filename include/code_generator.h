@@ -66,9 +66,23 @@ namespace code_generator
             QFile(J1939Includes_header_output_path).remove();
             QFile(message_queue_header_output_path).remove();
             QFile(windows_types_header_output_path).remove();
+            QFile(mutual_exclusion_handler_trampoline_header_output_path).remove();
             QFile(R"(:/target_header_files/J1939Includes.h)").copy(J1939Includes_header_output_path);
             QFile(R"(:/target_header_files/message_queue.h)").copy(message_queue_header_output_path);
             QFile(R"(:/target_header_files/windows_types.h)").copy(windows_types_header_output_path);
+            QFile(R"(:/target_header_files/mutual_exclusion_handler_trampoline.h)").copy(mutual_exclusion_handler_trampoline_header_output_path);
+            QFile::setPermissions(J1939Includes_header_output_path, QFile::WriteOwner | QFile::ReadOwner
+                                  | QFile::WriteUser | QFile::ReadUser | QFile::WriteGroup | QFile::ReadGroup
+                                  | QFile::WriteOther | QFile::ReadOther);
+            QFile::setPermissions(message_queue_header_output_path, QFile::WriteOwner | QFile::ReadOwner
+                                  | QFile::WriteUser | QFile::ReadUser | QFile::WriteGroup | QFile::ReadGroup
+                                  | QFile::WriteOther | QFile::ReadOther);
+            QFile::setPermissions(windows_types_header_output_path, QFile::WriteOwner | QFile::ReadOwner
+                                  | QFile::WriteUser | QFile::ReadUser | QFile::WriteGroup | QFile::ReadGroup
+                                  | QFile::WriteOther | QFile::ReadOther);
+            QFile::setPermissions(mutual_exclusion_handler_trampoline_header_output_path, QFile::WriteOwner | QFile::ReadOwner
+                                  | QFile::WriteUser | QFile::ReadUser | QFile::WriteGroup | QFile::ReadGroup
+                                  | QFile::WriteOther | QFile::ReadOther);
 
             code_generator::CommandRunner goil_cmd_run(goil_exe_path, {"--target=avr/arduino/uno", QString("--templates=") + QDir(output_folder_path).relativeFilePath(trampoline_goil_templates_path), output_oil_file_name});
             goil_cmd_run.set_directory(output_folder_path);
@@ -133,6 +147,7 @@ namespace code_generator
         QString J1939Includes_header_output_path;
         QString message_queue_header_output_path;
         QString windows_types_header_output_path;
+        QString mutual_exclusion_handler_trampoline_header_output_path;
         QString output_oil_file_name;
         QString output_cpp_file_name;
         QString output_exe_file_name;
@@ -247,6 +262,7 @@ namespace code_generator
                 cd.J1939Includes_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("J1939Includes.h");
                 cd.message_queue_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("message_queue.h");
                 cd.windows_types_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("windows_types.h");
+                cd.mutual_exclusion_handler_trampoline_header_output_path = QDir(cd.output_folder_path).absoluteFilePath("mutual_exclusion_handler_trampoline.h");
                 if(cd.output_oil_file_name.isEmpty())
                 {
                     qDebug() << "Error: Output oil file name is empty\n";

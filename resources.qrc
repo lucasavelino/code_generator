@@ -22,5 +22,6 @@
         <file>code_templates/timer_task_code.txt</file>
         <file>code_templates/timer_task_oil.txt</file>
         <file>images/cg_icon.png</file>
+        <file>target_header_files/mutual_exclusion_handler_trampoline.h</file>
     </qresource>
 </RCC>
