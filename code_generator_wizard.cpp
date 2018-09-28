@@ -484,7 +484,8 @@ void PinsConfigPage::initializePage()
     auto def_file = field("def_file").toString();
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
-    std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
+    code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
+    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all) = code_generator::util::read_def(def_file.toStdString());
     (void)timer_handlers;
     auto *layout = dynamic_cast<QGridLayout *>(this->layout());
     for(size_type i = 0; i < key_handlers.size(); ++i)
@@ -515,7 +516,8 @@ bool PinsConfigPage::validatePage()
     auto def_file = field("def_file").toString();
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
-    std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
+    code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
+    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all) = code_generator::util::read_def(def_file.toStdString());
     (void)timer_handlers;
     QMap<QString,int> contador_pinos_repetidos;
     QStringList pinos;
@@ -575,7 +577,8 @@ void BuildPage::initializePage()
 
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
-    std::tie(timer_handlers,key_handlers) = code_generator::util::read_def(def_file.toStdString());
+    code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
+    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all) = code_generator::util::read_def(def_file.toStdString());
     (void)timer_handlers;
 
     QString pins_associated_to_keys = "{";

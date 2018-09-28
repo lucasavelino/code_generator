@@ -15,12 +15,6 @@ namespace meta
         static const bool value = (N & (N-1)) == 0;
     };
 
-    template <unsigned int N>
-    struct is_positive
-    {
-        static const bool value = N > 0;
-    };
-
     template <bool>
     struct required
     {};
@@ -31,7 +25,7 @@ namespace meta
 
 // Parameter size must be positive and a power of 2
 template <typename T, typename MutualExclusionHandler, unsigned int size = 4>
-class MessageQueue : meta::required< meta::is_positive<size>::value && meta::is_power_of_2<size>::value >
+class MessageQueue : meta::required< meta::is_power_of_2<size>::value >
 {
 public:
 

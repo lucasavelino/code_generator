@@ -15,6 +15,10 @@ namespace code_generator
         using x3::lexeme;
         using ascii::char_;
         using x3::long_long;
+        using x3::matches;
+        using x3::_attr;
+        using x3::_val;
+        using x3::_pass;
 
         x3::rule<class timer_handler, ast::TimerHandler> const timer_handler = "timer_handler";
         auto const timer_handler_def =
@@ -36,9 +40,22 @@ namespace code_generator
                 >> +(char_);
         BOOST_SPIRIT_DEFINE(key_handler);
 
+        auto declared_if_matches =
+            [](auto& ctx)
+            {
+                _val(ctx).declared = true;
+            };
+
+        x3::rule<class msg_handler_pgn_all, ast::MessageHandlerPgnAll> const msg_handler_pgn_all = "msg_handler_pgn_all";
+        auto const msg_handler_pgn_all_def =
+                lexeme[
+                    lit("OnPGN_All")[declared_if_matches]
+                ];
+        BOOST_SPIRIT_DEFINE(msg_handler_pgn_all);
+
         x3::rule<class any_handler, ast::AnyHandler> const any_handler = "any_handler";
         auto const any_handler_def =
-                (timer_handler | key_handler | *char_);
+                (timer_handler | key_handler | msg_handler_pgn_all | *char_);
         BOOST_SPIRIT_DEFINE(any_handler);
 
         x3::rule<class signal_value, ast::SignalValue> const signal_value = "signal_value";

@@ -18,8 +18,10 @@ namespace code_generator
         {
             using result_type = void;
 
-            HandlersExtractor(std::vector<ast::TimerHandler> &timers, std::vector<ast::KeyHandler> &keys)
-                    : timers(timers), keys(keys)
+            HandlersExtractor(std::vector<ast::TimerHandler> &timers,
+                              std::vector<ast::KeyHandler> &keys,
+                              ast::MessageHandlerPgnAll &m_pgn_all)
+                : timers(timers), keys(keys), m_pgn_all(m_pgn_all)
             {}
 
             void operator()(const code_generator::ast::TimerHandler& t)
@@ -30,6 +32,11 @@ namespace code_generator
             void operator()(const code_generator::ast::KeyHandler& k)
             {
                 keys.push_back(k);
+            }
+
+            void operator()(code_generator::ast::MessageHandlerPgnAll m)
+            {
+                m_pgn_all = m;
             }
 
             void operator()(const std::string& unused_info)
@@ -44,6 +51,7 @@ namespace code_generator
 
             std::vector<code_generator::ast::TimerHandler>& timers;
             std::vector<code_generator::ast::KeyHandler>& keys;
+            code_generator::ast::MessageHandlerPgnAll& m_pgn_all;
         };
 
         struct TimerTask
@@ -63,9 +71,17 @@ namespace code_generator
             std::string task_inner_code;
         };
 
+        struct PgnAllTask
+        {
+            std::string task_name;
+            std::string task_parameter;
+            std::string task_inner_code;
+        };
+
         inline std::tuple<
                 std::vector<code_generator::ast::TimerHandler>,
-                std::vector<code_generator::ast::KeyHandler>
+                std::vector<code_generator::ast::KeyHandler>,
+                code_generator::ast::MessageHandlerPgnAll
         > read_def(const std::string& file_name)
         {
             using boost::spirit::x3::ascii::space;
@@ -74,14 +90,15 @@ namespace code_generator
             std::string line;
             std::vector<code_generator::ast::TimerHandler> timers;
             std::vector<code_generator::ast::KeyHandler> keys;
-            HandlersExtractor handlers_extractor{timers, keys};
+            code_generator::ast::MessageHandlerPgnAll m_pgn_all;
+            HandlersExtractor handlers_extractor{timers, keys, m_pgn_all};
             while(std::getline(in_file,line))
             {
                 code_generator::ast::AnyHandler handler;
                 phrase_parse(std::begin(line), std::end(line), any_handler, space, handler);
                 handlers_extractor(handler);
             }
-            return std::make_tuple(std::move(timers), std::move(keys));
+            return std::make_tuple(std::move(timers), std::move(keys), std::move(m_pgn_all));
         }
 
         inline std::vector<code_generator::ast::Message> read_dbf(const std::string& file_name)
@@ -159,12 +176,14 @@ namespace code_generator
         inline std::tuple<
                 std::vector<code_generator::util::TimerTask>,
                 std::vector<code_generator::util::KeyTask>,
+                code_generator::util::PgnAllTask,
                 std::vector<std::string>,
                 QString
         > get_functions(const std::string &file_name,
                         const std::vector<code_generator::ast::TimerHandler>& timer_handlers,
                         const std::vector<code_generator::ast::KeyHandler>& key_handlers,
                         const std::map<std::string, unsigned int>& key_mapping,
+                        code_generator::ast::MessageHandlerPgnAll& m_pgn_all,
                         bool& error)
         {
             error = false;
@@ -175,6 +194,7 @@ namespace code_generator
             std::vector<std::string> functions;
             std::vector<code_generator::util::TimerTask> timer_tasks;
             std::vector<code_generator::util::KeyTask> key_tasks;
+            code_generator::util::PgnAllTask msg_handler_pgn_all;
             const auto cpp_file_str{read_whole_file_as_string(file_name)};
             auto texts = get_text_inside_delimited_block(cpp_file_str, "J1939 generated function");
             for(const auto& text : texts)
@@ -198,6 +218,7 @@ namespace code_generator
                                      ss << "OnKey_" << key_handler.key;
                                      return ss.str() == function.name;
                                  });
+                    bool is_msg_handler_pgn_all = m_pgn_all.declared && function.name == "OnPGN_All";
                     if(timer_handlers.end() != timer_handler)
                     {
                         timer_tasks.push_back(TimerTask{timer_handler->name, function.name, timer_handler->milliseconds, function.inner_code});
@@ -211,13 +232,18 @@ namespace code_generator
                             error_ts << "Erro: A função " << QString::fromStdString(function.name) << " não existe no mapeamento de teclas para pinos\n";
                             error = true;
                         }
-                    } else
+                    } else if(is_msg_handler_pgn_all)
+                    {
+                        msg_handler_pgn_all.task_name = function.name;
+                        msg_handler_pgn_all.task_parameter = function.parameters[0];
+                        msg_handler_pgn_all.task_inner_code = function.inner_code;
+                    }else
                     {
                         functions.push_back(text);
                     }
                 }
             }
-            return std::make_tuple(timer_tasks,key_tasks,functions,error_ts.readAll());
+            return std::make_tuple(timer_tasks,key_tasks,msg_handler_pgn_all,functions,error_ts.readAll());
         }
 
         inline std::string get_global_variables_declaration(const std::string& file_name)

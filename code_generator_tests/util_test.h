@@ -54,19 +54,37 @@ TEST(GetSignalType,test)
     ASSERT_EQ(code_generator::util::get_appropriate_signal_type(sig), "bool");
 }
 
-TEST(ReadDef,test)
+TEST(ReadDef,test1)
 {
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
+    code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
     QTemporaryDir temporary_dir;
-    auto file_name = create_temporary_file(R"(:/test/files/EMS_NODE.def)", temporary_dir, "EMS_NODE.def");
-    std::tie(timer_handlers, key_handlers) = code_generator::util::read_def(file_name.toStdString());
+    auto file_name = create_temporary_file(R"(:/test/files/test1.def)", temporary_dir, "test1.def");
+    std::tie(timer_handlers, key_handlers, msg_handler_pgn_all) = code_generator::util::read_def(file_name.toStdString());
     ASSERT_EQ(timer_handlers.size(), 1);
     ASSERT_EQ(key_handlers.size(), 2);
     ASSERT_EQ(timer_handlers[0].name, "EEC1");
     ASSERT_EQ(timer_handlers[0].milliseconds, 20);
     ASSERT_EQ(key_handlers[0].key, "i");
     ASSERT_EQ(key_handlers[1].key, "d");
+    ASSERT_EQ(msg_handler_pgn_all.declared, false);
+}
+
+TEST(ReadDef,test2)
+{
+    std::vector<code_generator::ast::TimerHandler> timer_handlers;
+    std::vector<code_generator::ast::KeyHandler> key_handlers;
+    code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
+    QTemporaryDir temporary_dir;
+    auto file_name = create_temporary_file(R"(:/test/files/test2.def)", temporary_dir, "test2.def");
+    std::tie(timer_handlers, key_handlers, msg_handler_pgn_all) = code_generator::util::read_def(file_name.toStdString());
+    ASSERT_EQ(timer_handlers.size(), 1);
+    ASSERT_EQ(key_handlers.size(), 1);
+    ASSERT_EQ(timer_handlers[0].name, "Test");
+    ASSERT_EQ(timer_handlers[0].milliseconds, 33);
+    ASSERT_EQ(key_handlers[0].key, "t");
+    ASSERT_EQ(msg_handler_pgn_all.declared, true);
 }
 
 TEST(ReadDbf,test1)

@@ -1,7 +1,8 @@
 <RCC>
     <qresource prefix="/test">
-        <file>files/EMS_NODE.def</file>
         <file>files/New_DatabaseJ19391.DBF</file>
         <file>files/test1.DBF</file>
+        <file>files/test1.def</file>
+        <file>files/test2.def</file>
     </qresource>
 </RCC>

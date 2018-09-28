@@ -24,9 +24,14 @@ namespace code_generator
             std::string key;
         };
 
+        struct MessageHandlerPgnAll
+        {
+            bool declared{false};
+        };
+
         struct AnyHandler
         {
-            boost::spirit::x3::variant<TimerHandler, KeyHandler, std::string> handler;
+            boost::spirit::x3::variant<TimerHandler, KeyHandler, MessageHandlerPgnAll, std::string> handler;
         };
 
         struct SignalValue
@@ -83,6 +88,10 @@ BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::TimerHandler,
 
 BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::KeyHandler,
         key
+)
+
+BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::MessageHandlerPgnAll,
+        declared
 )
 
 BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::AnyHandler,
