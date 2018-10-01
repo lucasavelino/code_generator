@@ -78,6 +78,34 @@ namespace code_generator
             std::string task_inner_code;
         };
 
+        struct SystemTasksInfo
+        {
+            SystemTasksInfo() = default;
+            SystemTasksInfo(const SystemTasksInfo&) = default;
+            SystemTasksInfo(SystemTasksInfo&&) = default;
+            SystemTasksInfo& operator=(const SystemTasksInfo&) = default;
+            SystemTasksInfo& operator=(SystemTasksInfo&&) = default;
+            SystemTasksInfo(unsigned int total_timer_tasks, bool pins_reader_task_used,
+                                bool can_send_task_used, bool message_handler_pgn_all_used)
+                : total_timer_tasks{total_timer_tasks}, pins_reader_task_used{pins_reader_task_used}
+                , can_send_task_used{can_send_task_used}, can_recv_task_used{message_handler_pgn_all_used}
+                , timer_task_used{total_timer_tasks != 0}, message_handler_pgn_all_used{message_handler_pgn_all_used}
+            {}
+
+            unsigned int number_of_tasks() const noexcept
+            {
+                return total_timer_tasks + (pins_reader_task_used ? 1 : 0)
+                        + (can_send_task_used ? 1 : 0) + (can_recv_task_used ? 1 : 0);
+            }
+
+            unsigned int total_timer_tasks{0};
+            bool pins_reader_task_used{false};
+            bool can_send_task_used{false};
+            bool can_recv_task_used{false};
+            bool timer_task_used{false};
+            bool message_handler_pgn_all_used{false};
+        };
+
         inline std::tuple<
                 std::vector<code_generator::ast::TimerHandler>,
                 std::vector<code_generator::ast::KeyHandler>,

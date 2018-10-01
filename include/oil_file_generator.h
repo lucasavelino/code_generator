@@ -16,13 +16,14 @@ namespace code_generator
     public:
         OilFileGenerator(QString output_file_name, QString timer_task_oil_file_name,
                          QString can_send_task_oil_file_name, QString pins_reader_task_oil_file_name,
-                         QString oil_ini_file_name,
+                         QString can_recv_task_oil_file_name, QString oil_ini_file_name,
                          QString oil_fim_file_name, QString trampoline_root_path,
                          QString src_file_path, QString exe_file_path)
                 : output_file_name(std::move(output_file_name)), timer_task_oil_file_name(
                 std::move(timer_task_oil_file_name)),
                   can_send_task_oil_file_name(std::move(can_send_task_oil_file_name)),
                   pins_reader_task_oil_file_name(std::move(pins_reader_task_oil_file_name)),
+                  can_recv_task_oil_file_name(std::move(can_recv_task_oil_file_name)),
                   oil_ini_file_name(std::move(oil_ini_file_name)),
                   oil_fim_file_name(std::move(oil_fim_file_name)), trampoline_root_path(
                           std::move(trampoline_root_path)), src_file_path(std::move(src_file_path)),
@@ -30,7 +31,7 @@ namespace code_generator
         {}
 
         void generate(const std::vector<code_generator::ast::TimerHandler>& timer_handlers,
-                        unsigned int total_threads)
+                        const util::SystemTasksInfo& tasks_info)
         {
             QFile out_file(output_file_name);
             if(!out_file.open(QFile::WriteOnly | QFile::Text))
@@ -45,25 +46,46 @@ namespace code_generator
                             .add_tag("SrcFileName",src_file_path);
             oil_ini_replacer.replace_tags();
             out_file_stream << oil_ini_replacer;
-            Replacer can_send_task_replacer{can_send_task_oil_file_name};
-            can_send_task_replacer.add_tag("CanSendTaskPriority",QString::number(2U));
-            can_send_task_replacer.replace_tags();
-            out_file_stream << can_send_task_replacer;
-            Replacer pins_reader_task_replacer{pins_reader_task_oil_file_name};
-            pins_reader_task_replacer.add_tag("PinsReaderTaskTime", QString::number(static_cast<unsigned int>(120/1.024F)))
-                                     .add_tag("PinsReaderTaskPriority", QString::number(1U));
-            pins_reader_task_replacer.replace_tags();
-            out_file_stream << pins_reader_task_replacer;
-            unsigned int task_priority = total_threads;
-            for(const code_generator::ast::TimerHandler& timer_handler : timer_handlers)
+            if(tasks_info.can_send_task_used)
             {
-                Replacer timer_task_oil_replacer{timer_task_oil_file_name};
-                timer_task_oil_replacer.add_tag("TaskName", QString("OnTimer_") + timer_handler.name.c_str() + "_" + QString::number(timer_handler.milliseconds))
-                        .add_tag("TaskTimerTime",QString::number(static_cast<unsigned int>(timer_handler.milliseconds/1.024F)))
-                        .add_tag("TaskPriority",QString::number(task_priority));
-                timer_task_oil_replacer.replace_tags();
-                out_file_stream << timer_task_oil_replacer;
-                task_priority--;
+                Replacer can_send_task_replacer{can_send_task_oil_file_name};
+                can_send_task_replacer.add_tag("CanSendTaskPriority",
+                                               QString::number(1U
+                                                               + (tasks_info.pins_reader_task_used ? 1U : 0U)
+                                                               + (tasks_info.can_recv_task_used ? 1U : 0U)));
+                can_send_task_replacer.replace_tags();
+                out_file_stream << can_send_task_replacer;
+            }
+
+            if(tasks_info.pins_reader_task_used)
+            {
+                Replacer pins_reader_task_replacer{pins_reader_task_oil_file_name};
+                pins_reader_task_replacer.add_tag("PinsReaderTaskTime", QString::number(static_cast<unsigned int>(120/1.024F)))
+                                         .add_tag("PinsReaderTaskPriority",
+                                                  QString::number(1U + (tasks_info.can_recv_task_used ? 1U : 0U)));
+                pins_reader_task_replacer.replace_tags();
+                out_file_stream << pins_reader_task_replacer;
+            }
+            if(tasks_info.can_recv_task_used)
+            {
+                Replacer can_recv_task_replacer{can_recv_task_oil_file_name};
+                can_recv_task_replacer.add_tag("CanRecvTaskPriority", QString::number(1U));
+                can_recv_task_replacer.replace_tags();
+                out_file_stream << can_recv_task_replacer;
+            }
+            if(tasks_info.timer_task_used)
+            {
+                unsigned int task_priority = tasks_info.number_of_tasks();
+                for(const code_generator::ast::TimerHandler& timer_handler : timer_handlers)
+                {
+                    Replacer timer_task_oil_replacer{timer_task_oil_file_name};
+                    timer_task_oil_replacer.add_tag("TaskName", QString("OnTimer_") + timer_handler.name.c_str() + "_" + QString::number(timer_handler.milliseconds))
+                            .add_tag("TaskTimerTime",QString::number(static_cast<unsigned int>(timer_handler.milliseconds/1.024F)))
+                            .add_tag("TaskPriority",QString::number(task_priority));
+                    timer_task_oil_replacer.replace_tags();
+                    out_file_stream << timer_task_oil_replacer;
+                    task_priority--;
+                }
             }
             QFile oil_fim_file(oil_fim_file_name);
             if(!oil_fim_file.open(QFile::ReadOnly | QFile::Text))
@@ -79,6 +101,7 @@ namespace code_generator
         QString timer_task_oil_file_name;
         QString can_send_task_oil_file_name;
         QString pins_reader_task_oil_file_name;
+        QString can_recv_task_oil_file_name;
         QString oil_ini_file_name;
         QString oil_fim_file_name;
         QString trampoline_root_path;

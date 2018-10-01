@@ -23,18 +23,21 @@ namespace code_generator
             std::vector<code_generator::ast::KeyHandler> key_handlers;
             code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
             std::tie(timer_handlers, key_handlers, msg_handler_pgn_all) = util::read_def(def_file_path.toStdString());
+            util::SystemTasksInfo tasks_info(timer_handlers.size(), key_handlers.size() != 0, true, msg_handler_pgn_all.declared);
             auto msgs = util::read_dbf(dbf_file_path.toStdString());
             code_generator::OilFileGenerator oil_generator{output_oil_file_path,
                                                            R"(:/code_templates/timer_task_oil.txt)",
                                                            R"(:/code_templates/can_send_task_oil.txt)",
                                                            R"(:/code_templates/pins_reader_task_oil.txt)",
+                                                           R"(:/code_templates/can_recv_task_oil.txt)",
                                                            R"(:/code_templates/oil_ini.txt)",
                                                            R"(:/code_templates/oil_fim.txt)",
                                                            trampoline_root_path_relative_to_output_folder,
                                                            output_cpp_file_name,
                                                            output_exe_file_name};
 
-            oil_generator.generate(timer_handlers, timer_handlers.size() + 1 + 1);
+
+            oil_generator.generate(timer_handlers, tasks_info);
 
             code_generator::MsgTypesFileGenerator msg_types_generator{output_msg_types_header_file_path,
                                                                       R"(:/code_templates/msg_types_header.txt)",
@@ -62,9 +65,10 @@ namespace code_generator
                                                                 R"(:/code_templates/key_handler_declaration.txt)",
                                                                 R"(:/code_templates/setup_func.txt)",
                                                                 R"(:/code_templates/can_send_task.txt)",
+                                                                R"(:/code_templates/can_recv_task.txt)",
                                                                 R"(:/code_templates/timer_task_code.txt)",
                                                                 R"(:/code_templates/pins_reader_task_code.txt)"};
-            cpp_file_generator.generate(functions, timer_tasks, key_tasks, global_variables_declaration);
+            cpp_file_generator.generate(functions, timer_tasks, key_tasks, global_variables_declaration, pgn_all_task, tasks_info);
             QFile(J1939Includes_header_output_path).remove();
             QFile(message_queue_header_output_path).remove();
             QFile(windows_types_header_output_path).remove();

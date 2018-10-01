@@ -1,0 +1,14 @@
+TASK(can_recv_task)
+{
+	J1939_MSG received_msg;
+	while(1)
+	{
+		if(CAN_MSGAVAIL == CAN.checkReceive())
+		{
+			CAN.readMsgBuf((byte*)&received_msg.dlc, (byte*)received_msg.data);
+			received_msg.id.setPGN(CAN.getCanId());
+			[#MessageHandlerPgnAll]
+		}
+	}
+}
+

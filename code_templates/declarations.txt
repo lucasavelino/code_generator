@@ -5,18 +5,16 @@ struct key_handler_t
 	key_handler_func handler;
 };
 
-DeclareTask(can_send_task);
-DeclareTask(pins_reader);
 DeclareResource(can_send_msg_queue_resource);
 DeclareEvent(can_send_msg_queue_empty);
 DeclareEvent(can_send_msg_queue_full);
 [#DeclareTaskList]
 
 [#KeyHandlersPrototypeList]
+[#MessageHandlersPrototypeList]
 
 const TaskType can_send_msg_queue_senders[] =
 {
-	pins_reader,
 [#SendMsgTaskList]
 };
 #define N_SENDERS (sizeof(can_send_msg_queue_senders)/sizeof(TaskType))
