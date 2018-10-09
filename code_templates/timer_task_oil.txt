@@ -15,7 +15,7 @@
     AUTOSTART = FALSE;
     ACTIVATION = 1;
     SCHEDULE = FULL;
-    STACKSIZE = 256;
+    STACKSIZE = [#TimerTaskStackSize];
 	RESOURCE = can_send_msg_queue_resource;
 	EVENT = can_send_msg_queue_empty;
 	EVENT = can_send_msg_queue_full;

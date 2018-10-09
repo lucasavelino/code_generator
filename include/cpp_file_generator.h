@@ -87,7 +87,7 @@ namespace code_generator
                                    << (tasks_info.timer_task_used ? ",\n" : "\n");
                 if(tasks_info.message_handler_pgn_all_used)
                 {
-                    message_handler_prototype_list << "void OnPGN_All();\n";
+                    message_handler_prototype_list << "void OnPGN_All(J1939_MSG&);\n";
                 }
             }
             auto first_time_timer_task_loop = true;
@@ -167,7 +167,7 @@ namespace code_generator
                     QString msg_handler_pgn_all_code_str;
                     QTextStream msg_handler_pgn_all_code(&msg_handler_pgn_all_code_str);
                     msg_handler_pgn_all_code << "void " << pgn_all_task.task_name.c_str()
-                                             << "(" << pgn_all_task.task_parameter.c_str() << ")\n{\n"
+                                             << "(J1939_MSG& RxMsg)\n{\n"
                                              << pgn_all_task.task_inner_code.c_str() << "}\n\n";
                     out_file_stream << msg_handler_pgn_all_code.readAll();
                 }
