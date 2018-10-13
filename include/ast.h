@@ -78,6 +78,13 @@ namespace code_generator
             std::string inner_code;
         };
 
+        struct PinProperties
+        {
+            bool digital;
+            unsigned int pin_number;
+            bool active_state_high;
+        };
+
         using boost::fusion::operator<<;
     }
 }
@@ -119,6 +126,10 @@ BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::Dbf,
 
 BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::HandlerFunction,
         name, parameters, inner_code
+)
+
+BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::PinProperties,
+        digital, pin_number, active_state_high
 )
 
 #endif //CODE_GENERATOR_AST_H

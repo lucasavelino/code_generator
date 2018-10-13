@@ -1,8 +1,18 @@
-struct key_handler_t
+#define CG_ON_TARGET
+
+struct digital_key_handler_t
 {
-	typedef void (*key_handler_func)(unsigned char);
+	typedef void (*digital_key_handler_func)(unsigned char);
 	unsigned char key;
-	key_handler_func handler;
+	unsigned char active_level;
+	digital_key_handler_func handler;
+};
+
+struct analog_key_handler_t
+{
+	typedef void (*analog_key_handler_func)(unsigned int);
+	unsigned char key;
+	analog_key_handler_func handler;
 };
 
 DeclareResource(can_send_msg_queue_resource);
@@ -10,7 +20,8 @@ DeclareEvent(can_send_msg_queue_empty);
 DeclareEvent(can_send_msg_queue_full);
 [#DeclareTaskList]
 
-[#KeyHandlersPrototypeList]
+[#DigitalKeyHandlersPrototypeList]
+[#AnalogKeyHandlersPrototypeList]
 [#MessageHandlersPrototypeList]
 
 const TaskType can_send_msg_queue_senders[] =
@@ -29,11 +40,17 @@ const TaskType can_send_msg_queue_receivers[] =
 MutualExclusionHandlerTrampoline<N_SENDERS,N_RECEIVERS> can_send_msg_mutual_exclusion_handler(can_send_msg_queue_resource, can_send_msg_queue_empty, can_send_msg_queue_full, can_send_msg_queue_senders, can_send_msg_queue_receivers);
 MessageQueue< J1939_MSG, MutualExclusionHandlerTrampoline<N_SENDERS, N_RECEIVERS> > can_send_msg_queue(can_send_msg_mutual_exclusion_handler);
 
-const key_handler_t key_handlers[] =
+const digital_key_handler_t digital_key_handlers[] =
 {
-[#KeyHandlersDeclarationList]
+[#DigitalKeyHandlersDeclarationList]
 };
-#define N_KEY_HANDLERS (sizeof(key_handlers)/sizeof(key_handler_t))
+#define N_DIGITAL_KEY_HANDLERS (sizeof(digital_key_handlers)/sizeof(digital_key_handler_t))
+
+const analog_key_handler_t analog_key_handlers[] =
+{
+[#AnalogKeyHandlersDeclarationList]
+};
+#define N_ANALOG_KEY_HANDLERS (sizeof(analog_key_handlers)/sizeof(analog_key_handler_t))
 
 void SendMsg(const J1939_MSG& msg)
 {

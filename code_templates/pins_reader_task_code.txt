@@ -1,11 +1,15 @@
 TASK(pins_reader)
 {
-	for(unsigned int i = 0; i < N_KEY_HANDLERS; ++i)
+	for(unsigned int i = 0; i < N_DIGITAL_KEY_HANDLERS; ++i)
 	{
-		if(digitalRead(key_handlers[i].key) == [#PinActiveLevel])
+		if(digitalRead(digital_key_handlers[i].key) == digital_key_handlers[i].active_level)
 		{
-			(*key_handlers[i].handler)(key_handlers[i].key);
+			(*digital_key_handlers[i].handler)(digital_key_handlers[i].key);
 		}
+	}
+	for(unsigned int i = 0; i < N_ANALOG_KEY_HANDLERS; ++i)
+	{
+		(*analog_key_handlers[i].handler)(analogRead(analog_key_handlers[i].key));
 	}
 	TerminateTask();
 }

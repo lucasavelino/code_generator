@@ -66,6 +66,8 @@ namespace code_generator
         {
             std::string key;
             unsigned int pin;
+            bool digital;
+            bool active_state_high;
             std::string task_name;
             std::string task_parameter;
             std::string task_inner_code;
@@ -210,7 +212,7 @@ namespace code_generator
         > get_functions(const std::string &file_name,
                         const std::vector<code_generator::ast::TimerHandler>& timer_handlers,
                         const std::vector<code_generator::ast::KeyHandler>& key_handlers,
-                        const std::map<std::string, unsigned int>& key_mapping,
+                        const std::map<std::string, ast::PinProperties>& key_mapping,
                         code_generator::ast::MessageHandlerPgnAll& m_pgn_all,
                         bool& error)
         {
@@ -254,7 +256,8 @@ namespace code_generator
                     {
                         if(key_mapping.find(function.name) != key_mapping.end())
                         {
-                            key_tasks.push_back(KeyTask{key_handler->key, key_mapping.at(function.name), function.name, function.parameters[0], function.inner_code});
+                            auto value = key_mapping.at(function.name);
+                            key_tasks.push_back(KeyTask{key_handler->key, value.pin_number, value.digital, value.active_state_high, function.name, function.parameters[0], function.inner_code});
                         } else
                         {
                             error_ts << "Erro: A função " << QString::fromStdString(function.name) << " não existe no mapeamento de teclas para pinos\n";
@@ -327,20 +330,11 @@ namespace code_generator
             }
         }
 
-        inline std::map<std::string, unsigned int> get_key_mapping(const std::string& key_mapping_str)
+        inline auto get_key_mapping(const std::string& key_mapping_str)
         {
-            namespace x3 = boost::spirit::x3;
-            namespace ascii = boost::spirit::x3::ascii;
-            using boost::spirit::x3::ascii::space;
-            using ascii::char_;
-            using x3::int_;
-            auto key_pin_item_rule = x3::rule<class key_pin_item_rule, std::pair<std::string, unsigned int>>() =
-                    *(char_ - ':') >> ':' >> int_;
-            auto key_pin_map_rule = x3::rule<class key_pin_map_rule, std::map<std::string, unsigned int>>() =
-                    '{'
-                    >> (key_pin_item_rule % ',')
-                    >> '}';
-            std::map<std::string, unsigned int> key_pin_map;
+            using parser::key_pin_map_rule;
+            using boost::spirit::x3::space;
+            std::map<std::string, ast::PinProperties> key_pin_map;
             phrase_parse(key_mapping_str.begin(), key_mapping_str.end(), key_pin_map_rule, space, key_pin_map);
             return key_pin_map;
         }

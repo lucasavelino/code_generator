@@ -62,7 +62,8 @@ namespace code_generator
                                                                 R"(:/code_templates/includes.txt)",
                                                                 output_msg_types_header_file_name,
                                                                 R"(:/code_templates/declarations.txt)",
-                                                                R"(:/code_templates/key_handler_declaration.txt)",
+                                                                R"(:/code_templates/digital_key_handler_declaration.txt)",
+                                                                R"(:/code_templates/analog_key_handler_declaration.txt)",
                                                                 R"(:/code_templates/setup_func.txt)",
                                                                 R"(:/code_templates/can_send_task.txt)",
                                                                 R"(:/code_templates/can_recv_task.txt)",
@@ -159,7 +160,7 @@ namespace code_generator
         QString output_exe_file_name;
         QString output_msg_types_header_file_name;
         QString trampoline_root_path_relative_to_output_folder;
-        std::map<std::string, unsigned int> key_mapping;
+        std::map<std::string, ast::PinProperties> key_mapping;
         QString com_port;
         bool arduino_nano{};
         bool flash{};

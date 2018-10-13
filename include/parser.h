@@ -19,6 +19,7 @@ namespace code_generator
         using x3::_attr;
         using x3::_val;
         using x3::_pass;
+        using x3::eps;
 
         x3::rule<class timer_handler, ast::TimerHandler> const timer_handler = "timer_handler";
         auto const timer_handler_def =
@@ -126,6 +127,39 @@ namespace code_generator
                 >> lexeme[+(char_ - '}')]
                 >> '}';
         BOOST_SPIRIT_DEFINE(handler_function);
+
+        auto is_digital_pin = [](auto& ctx) { _val(ctx).digital = _attr(ctx) != 'a'; };
+        auto pin_number = [](auto& ctx) { _val(ctx).pin_number = _attr(ctx); };
+        auto is_active_state_high = [](auto& ctx) { _val(ctx).active_state_high = _attr(ctx) != 'l'; };
+        auto active_state_high_if_doesnt_match = [](auto& ctx) { _val(ctx).active_state_high = true; };
+
+        x3::rule<class pin_properties_rule, ast::PinProperties> const pin_properties_rule = "pin_properties_rule";
+        auto const pin_properties_rule_def =
+                lit("type")
+                >> ':'
+                >> char_[is_digital_pin]
+                >> ','
+                >> lit("number")
+                >> ':'
+                >> int_[pin_number]
+                >> ((',' >> lit("active_state") >> ':' >> char_[is_active_state_high]) | eps[active_state_high_if_doesnt_match]);
+        BOOST_SPIRIT_DEFINE(pin_properties_rule);
+
+        x3::rule<class key_pin_item_rule, std::pair<std::string, ast::PinProperties>> const key_pin_item_rule = "key_pin_item_rule";
+        auto const key_pin_item_rule_def =
+                *(char_ - ':')
+                >> ':'
+                >> '{'
+                >> pin_properties_rule
+                >> '}';
+
+        BOOST_SPIRIT_DEFINE(key_pin_item_rule);
+        x3::rule<class key_pin_map_rule, std::map<std::string, ast::PinProperties>> const key_pin_map_rule = "key_pin_map_rule";
+        auto const key_pin_map_rule_def =
+                '{'
+                >> (key_pin_item_rule % ',')
+                >> '}';
+        BOOST_SPIRIT_DEFINE(key_pin_map_rule);
     }
 }
 

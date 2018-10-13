@@ -5,6 +5,16 @@
 #include <QSettings>
 #include "code_generator_wizard.h"
 
+
+static const auto digital_pin_used_by_mcp2515 =
+[](unsigned int pin)
+{
+    constexpr std::array<unsigned int, 4> digital_pins_used_by_mcp2515 = { 10, 11, 12, 13 };
+    return std::find(std::begin(digital_pins_used_by_mcp2515),
+                     std::end(digital_pins_used_by_mcp2515),
+                     pin) != std::end(digital_pins_used_by_mcp2515);
+};
+
 CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     QWizard(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint)
 {
@@ -454,10 +464,16 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     auto *layout = new QGridLayout;
     layout->addWidget(arduino_select, 0, 0);
     layout->addWidget(arduino_img_label, 1, 0, 20, 1);
-    auto *keys_label = new QLabel(tr("Tecla(s)"));
-    auto *pins_label = new QLabel(tr("Pino(s)"));
+    auto *keys_label = new QLabel(tr("Tecla"));
+    auto *pins_label = new QLabel(tr("Pino"));
+    auto *input_type_label = new QLabel(tr("Tipo de entrada"));
+    auto *active_state_label = new QLabel(tr("Ativo em nivel lógico"));
+    input_type_label->setWordWrap(true);
+    active_state_label->setWordWrap(true);
     layout->addWidget(keys_label, 0, 1);
-    layout->addWidget(pins_label, 0, 2);
+    layout->addWidget(input_type_label, 0, 2);
+    layout->addWidget(pins_label, 0, 3);
+    layout->addWidget(active_state_label, 0, 4);
     setLayout(layout);
 }
 
@@ -495,16 +511,75 @@ void PinsConfigPage::initializePage()
         {
             auto *key_label = new QLabel(tr("<%1>:").arg(QString::fromStdString(key_handler.key)));
             key_label->setTextFormat(Qt::PlainText);
+            auto *pin_type_select = new QComboBox;
+            pin_type_select->addItem(tr("digital"));
+            pin_type_select->addItem(tr("analógico"));
             auto *key_select = new QComboBox;
-            for(int i = 0; i < 20; ++i)
+            for(unsigned int j = 0; j < 14; ++j)
             {
-                key_select->addItem(QString::number(i));
+                if(!digital_pin_used_by_mcp2515(j))
+                {
+                    key_select->addItem(QString::number(j));
+                }
             }
             key_label->setBuddy(key_select);
-
+            auto *digital_pin_active_state_select = new QComboBox;
+            digital_pin_active_state_select->addItem(tr("1 (alto)"));
+            digital_pin_active_state_select->addItem(tr("0 (baixo)"));
+            connect(pin_type_select,
+                    QOverload<int>::of(&QComboBox::activated),
+                    [this, i](int index)
+                    {
+                        auto* layout = dynamic_cast<QGridLayout *>(this->layout());
+                        if(layout != nullptr)
+                        {
+                            auto* digital_pin_active_state_item = layout->itemAtPosition(static_cast<int>(i) + 1, 4);
+                            if(digital_pin_active_state_item != nullptr)
+                            {
+                                auto* digital_pin_active_state_widget = digital_pin_active_state_item->widget();
+                                if(digital_pin_active_state_widget != nullptr)
+                                {
+                                    digital_pin_active_state_widget->setEnabled(index == 0);
+                                }
+                            }
+                            auto* key_select_item = layout->itemAtPosition(static_cast<int>(i) + 1, 3);
+                            if(key_select_item != nullptr)
+                            {
+                                auto* key_select_widget = key_select_item->widget();
+                                if(key_select_widget != nullptr)
+                                {
+                                    auto* key_select = dynamic_cast<QComboBox *>(key_select_widget);
+                                    if(key_select != nullptr)
+                                    {
+                                        key_select->clear();
+                                        if(index == 0)
+                                        {
+                                            for(unsigned int j = 0; j < 14; ++j)
+                                            {
+                                                if(!digital_pin_used_by_mcp2515(j))
+                                                {
+                                                    key_select->addItem(QString::number(j));
+                                                }
+                                            }
+                                        } else
+                                        {
+                                            for(unsigned int j = 14; j < 20; ++j)
+                                            {
+                                                key_select->addItem(QString::number(j));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
             layout->addWidget(key_label, static_cast<int>(i) + 1, 1);
-            layout->addWidget(key_select, static_cast<int>(i) + 1, 2);
+            layout->addWidget(pin_type_select, static_cast<int>(i) + 1, 2);
+            layout->addWidget(key_select, static_cast<int>(i) + 1, 3);
+            layout->addWidget(digital_pin_active_state_select, static_cast<int>(i) + 1, 4);
             registerField(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key)), key_select, "currentText", "currentTextChanged");
+            registerField(tr("key_%1_pin_type").arg(QString::fromStdString(key_handler.key)), pin_type_select, "currentText", "currentTextChanged");
+            registerField(tr("key_%1_digital_pin_active_state").arg(QString::fromStdString(key_handler.key)), digital_pin_active_state_select, "currentText", "currentTextChanged");
         }
     }
     setLayout(layout);
@@ -541,6 +616,25 @@ bool PinsConfigPage::validatePage()
         msg.setText(tr("Um mesmo pino não deve ser associado a mais de uma tecla."));
         msg.exec();
         return false;
+    }
+
+    for(auto&& key_handler : key_handlers)
+    {
+        auto pin_type = field(tr("key_%1_pin_type").arg(QString::fromStdString(key_handler.key))).toString();
+        unsigned int pin = field(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key))).toString().toUInt();
+        if(pin_type == "digital" && (digital_pin_used_by_mcp2515(pin) || pin > 13))
+        {
+            QMessageBox msg;
+            msg.setText(tr("O pino %1 não é um pino digital válido ou é utilizado para comunicação com o módulo CAN mcp2515").arg(QString::number(pin)));
+            msg.exec();
+            return false;
+        } else if(pin_type == "analógico" && pin < 14)
+        {
+            QMessageBox msg;
+            msg.setText(tr("O pino %1 não é um pino analógico válido").arg(QString::number(pin)));
+            msg.exec();
+            return false;
+        }
     }
 
     QSettings settings;
@@ -593,8 +687,20 @@ void BuildPage::initializePage()
             pins_associated_to_keys += ",";
         }
         auto key = QString::fromStdString(key_handler.key);
-        auto pin = field(tr("key_%1_pin").arg(key)).toString();
-        pins_associated_to_keys += "OnKey_" + key + ":" + pin;
+        auto pin_number = field(tr("key_%1_pin").arg(key)).toString();
+        auto pin_type = field(tr("key_%1_pin_type").arg(key)).toString() == tr("digital") ? QString("d") : QString("a");
+        auto pin_active_state = field(tr("key_%1_digital_pin_active_state").arg(key)).toString() == tr("1 (alto)") ? QString("h") : QString("l");
+        pins_associated_to_keys +=
+                "OnKey_"
+                + key + ":"
+                + "{"
+                + "type:" + pin_type
+                + ","
+                + "number:" + pin_number
+                + (pin_type == QString("d") ?
+                    (QString(",active_state:") + pin_active_state) :
+                    QString(""))
+                + "}";
     }
     pins_associated_to_keys += "}";
 
