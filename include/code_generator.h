@@ -23,7 +23,7 @@ namespace code_generator
             std::vector<code_generator::ast::KeyHandler> key_handlers;
             code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
             std::tie(timer_handlers, key_handlers, msg_handler_pgn_all) = util::read_def(def_file_path.toStdString());
-            util::SystemTasksInfo tasks_info(timer_handlers.size(), key_handlers.size() != 0, true, msg_handler_pgn_all.declared);
+            util::SystemTasksInfo tasks_info(timer_handlers.size(), key_handlers.size() != 0, can_sender, msg_handler_pgn_all.declared, serial_user);
             auto msgs = util::read_dbf(dbf_file_path.toStdString());
             code_generator::OilFileGenerator oil_generator{output_oil_file_path,
                                                            R"(:/code_templates/timer_task_oil.txt)",
@@ -164,6 +164,8 @@ namespace code_generator
         QString com_port;
         bool arduino_nano{};
         bool flash{};
+        bool can_sender{};
+        bool serial_user{};
         friend class CodeGeneratorPropertiesManager;
     };
 
@@ -249,6 +251,18 @@ namespace code_generator
         CodeGeneratorPropertiesManager& is_arduino_nano(bool arduino_nano)
         {
             cd.arduino_nano = arduino_nano;
+            return *this;
+        }
+
+        CodeGeneratorPropertiesManager& is_can_sender(bool can_sender)
+        {
+            cd.can_sender = can_sender;
+            return *this;
+        }
+
+        CodeGeneratorPropertiesManager& use_serial_interface(bool serial_user)
+        {
+            cd.serial_user = serial_user;
             return *this;
         }
 

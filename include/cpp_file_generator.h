@@ -135,23 +135,51 @@ namespace code_generator
             }
 
             code_generator::Replacer declarations_replacer{declarations_file_name};
-            declarations_replacer.add_tag("DeclareTaskList", declare_task_list.readAll())
+            declarations_replacer.add_tag("DeclareCanSendResourcesAndEvents",
+                                          tasks_info.can_send_task_used ?
+                                              "DeclareResource(can_send_msg_queue_resource);\n"
+                                              "DeclareEvent(can_send_msg_queue_empty);"
+                                              "\nDeclareEvent(can_send_msg_queue_full);\n" :
+                                              "")
+                                 .add_tag("DeclareCanRecvResourcesAndEvents",
+                                          tasks_info.can_recv_task_used ?
+                                              "DeclareEvent(can_recv_evt);\n" :
+                                              "")
+                                 .add_tag("DeclareTaskList", declare_task_list.readAll())
                                  .add_tag("DigitalKeyHandlersPrototypeList", digital_key_handlers_prototype_list.readAll())
                                  .add_tag("AnalogKeyHandlersPrototypeList", analog_key_handlers_prototype_list.readAll())
                                  .add_tag("MessageHandlersPrototypeList", message_handler_prototype_list.readAll())
                                  .add_tag("SendMsgTaskList", send_msg_task_list.readAll())
+                                 .add_tag("SendMsgReceiver", tasks_info.can_send_task_used ?
+                                                                "	can_send_task" :
+                                                                "")
+                                 .add_tag("InstantiateCanSendDataStructures",
+                                          tasks_info.can_send_task_used ?
+                                              "MutualExclusionHandlerTrampoline<N_SENDERS,N_RECEIVERS> "
+                                              "can_send_msg_mutual_exclusion_handler("
+                                              "can_send_msg_queue_resource, can_send_msg_queue_empty, "
+                                              "can_send_msg_queue_full, can_send_msg_queue_senders, "
+                                              "can_send_msg_queue_receivers);\n"
+                                              "MessageQueue< J1939_MSG, MutualExclusionHandlerTrampoline<N_SENDERS, N_RECEIVERS> > "
+                                              "can_send_msg_queue(can_send_msg_mutual_exclusion_handler);" :
+                                              "")
                                  .add_tag("DigitalKeyHandlersDeclarationList", digital_key_handlers_declaration_list.readAll())
-                                 .add_tag("AnalogKeyHandlersDeclarationList", analog_key_handlers_declaration_list.readAll());
+                                 .add_tag("AnalogKeyHandlersDeclarationList", analog_key_handlers_declaration_list.readAll())
+                                 .add_tag("SendMsgCode",
+                                          tasks_info.can_send_task_used ?
+                                              "\tcan_send_msg_queue.send(msg);" :
+                                              "");
             declarations_replacer.replace_tags();
             out_file_stream << declarations_replacer;
             out_file_stream << global_variables_declaration.c_str() << "\n\n";
             Replacer setup_func_replacer{setup_func_file_name};
-            setup_func_replacer.add_tag("InitializeDigitalInputPins",
+            setup_func_replacer.add_tag("SerialInit", tasks_info.serial_used ? "Serial.begin(115200);" : "")
+                               .add_tag("InitializeDigitalInputPins",
                                         (tasks_info.pins_reader_task_used ?
                                          "\tfor(unsigned int i = 0; i < N_DIGITAL_KEY_HANDLERS; ++i)\n"
                                          "\t{\n"
                                          "\t\tpinMode(digital_key_handlers[i].key, INPUT);\n"
-                                         "\t}\n" :
+                                         "\t}" :
                                          ""));
             setup_func_replacer.replace_tags();
             out_file_stream << setup_func_replacer;

@@ -88,10 +88,11 @@ namespace code_generator
             SystemTasksInfo& operator=(const SystemTasksInfo&) = default;
             SystemTasksInfo& operator=(SystemTasksInfo&&) = default;
             SystemTasksInfo(unsigned int total_timer_tasks, bool pins_reader_task_used,
-                                bool can_send_task_used, bool message_handler_pgn_all_used)
+                                bool can_send_task_used, bool message_handler_pgn_all_used, bool serial_used)
                 : total_timer_tasks{total_timer_tasks}, pins_reader_task_used{pins_reader_task_used}
                 , can_send_task_used{can_send_task_used}, can_recv_task_used{message_handler_pgn_all_used}
                 , timer_task_used{total_timer_tasks != 0}, message_handler_pgn_all_used{message_handler_pgn_all_used}
+                , serial_used{serial_used}
             {}
 
             unsigned int number_of_tasks() const noexcept
@@ -106,6 +107,7 @@ namespace code_generator
             bool can_recv_task_used{false};
             bool timer_task_used{false};
             bool message_handler_pgn_all_used{false};
+            bool serial_used{false};
         };
 
         inline std::tuple<

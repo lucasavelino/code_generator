@@ -9,7 +9,7 @@
 static const auto digital_pin_used_by_mcp2515 =
 [](unsigned int pin)
 {
-    constexpr std::array<unsigned int, 4> digital_pins_used_by_mcp2515 = { 10, 11, 12, 13 };
+    constexpr std::array<unsigned int, 5> digital_pins_used_by_mcp2515 = { 2, 10, 11, 12, 13 };
     return std::find(std::begin(digital_pins_used_by_mcp2515),
                      std::end(digital_pins_used_by_mcp2515),
                      pin) != std::end(digital_pins_used_by_mcp2515);
@@ -92,6 +92,8 @@ LoadConfigsPage::LoadConfigsPage(QWidget *parent)
                 setField("output_dir", settings.value("output_dir",""));
                 setField("output_prefix_name", settings.value("output_prefix_name",""));
                 setField("arduino_type", settings.value("arduino_type",""));
+                setField("can_sender", settings.value("can_sender",""));
+                setField("serial_user", settings.value("serial_user",""));
             }
     );
 
@@ -433,6 +435,8 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     arduino_select->addItem(tr("Arduino UNO"));
     arduino_select->addItem(tr("Arduino NANO"));
     arduino_img_label = new QLabel;
+    can_sender_checkbox = new QCheckBox(tr("A ECU envia mensagens pelo barremento CAN?"));
+    serial_user_checkbox = new QCheckBox(tr("A ECU faz uso da interface serial?"));
 
     connect(arduino_select,
             QOverload<int>::of(&QComboBox::activated),
@@ -459,6 +463,8 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
             });
 
     registerField("arduino_type", arduino_select, "currentText", "currentTextChanged");
+    registerField("can_sender", can_sender_checkbox);
+    registerField("serial_user", serial_user_checkbox);
     setButtonText(QWizard::NextButton, tr("C&ompilar"));
 
     auto *layout = new QGridLayout;
@@ -470,10 +476,12 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     auto *active_state_label = new QLabel(tr("Ativo em nivel lógico"));
     input_type_label->setWordWrap(true);
     active_state_label->setWordWrap(true);
-    layout->addWidget(keys_label, 0, 1);
-    layout->addWidget(input_type_label, 0, 2);
-    layout->addWidget(pins_label, 0, 3);
-    layout->addWidget(active_state_label, 0, 4);
+    layout->addWidget(can_sender_checkbox, 0, 2);
+    layout->addWidget(serial_user_checkbox, 0, 4);
+    layout->addWidget(keys_label, 1, 1);
+    layout->addWidget(input_type_label, 1, 2);
+    layout->addWidget(pins_label, 1, 3);
+    layout->addWidget(active_state_label, 1, 4);
     setLayout(layout);
 }
 
@@ -573,10 +581,10 @@ void PinsConfigPage::initializePage()
                             }
                         }
                     });
-            layout->addWidget(key_label, static_cast<int>(i) + 1, 1);
-            layout->addWidget(pin_type_select, static_cast<int>(i) + 1, 2);
-            layout->addWidget(key_select, static_cast<int>(i) + 1, 3);
-            layout->addWidget(digital_pin_active_state_select, static_cast<int>(i) + 1, 4);
+            layout->addWidget(key_label, static_cast<int>(i) + 2, 1);
+            layout->addWidget(pin_type_select, static_cast<int>(i) + 2, 2);
+            layout->addWidget(key_select, static_cast<int>(i) + 2, 3);
+            layout->addWidget(digital_pin_active_state_select, static_cast<int>(i) + 2, 4);
             registerField(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key)), key_select, "currentText", "currentTextChanged");
             registerField(tr("key_%1_pin_type").arg(QString::fromStdString(key_handler.key)), pin_type_select, "currentText", "currentTextChanged");
             registerField(tr("key_%1_digital_pin_active_state").arg(QString::fromStdString(key_handler.key)), digital_pin_active_state_select, "currentText", "currentTextChanged");
@@ -639,6 +647,8 @@ bool PinsConfigPage::validatePage()
 
     QSettings settings;
     settings.setValue("arduino_type", arduino_select->currentText());
+    settings.setValue("can_sender", can_sender_checkbox->isChecked());
+    settings.setValue("serial_user", serial_user_checkbox->isChecked());
     return true;
 }
 
@@ -668,6 +678,8 @@ void BuildPage::initializePage()
     auto output_dir = field("output_dir").toString();
     auto output_prefix_name = field("output_prefix_name").toString();
 
+    auto can_sender = field("can_sender").toBool();
+    auto serial_user = field("serial_user").toBool();
 
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
@@ -717,6 +729,8 @@ void BuildPage::initializePage()
             .set_output_msg_types_header_file_name("msg_types.h")
             .set_output_exe_file_name(output_prefix_name + "_bin")
             .set_key_mapping(pins_associated_to_keys.toStdString())
+            .is_can_sender(can_sender)
+            .use_serial_interface(serial_user)
             .configure();
     QString build_output_str = cd.execute_build();
     setField("build_text_edit",build_output_str);

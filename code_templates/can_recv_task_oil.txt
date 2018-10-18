@@ -1,13 +1,27 @@
+  ISR can_recv_isr {
+    CATEGORY = 2;
+    PRIORITY = [#CanRecvIsrPriority];
+    STACKSIZE = [#CanRecvIsrStackSize];
+    SOURCE = PIN2 {
+      MODE = FALLING;
+      PULL = NONE;
+    };
+  };
+
   TASK can_recv_task {
     PRIORITY = [#CanRecvTaskPriority];
     AUTOSTART = TRUE {
-	  APPMODE = std_app_mode;
-	};
+        APPMODE = std_app_mode;
+    };
     ACTIVATION = 1;
     SCHEDULE = FULL;
     STACKSIZE = [#CanRecvTaskStackSize];
-	RESOURCE = can_send_msg_queue_resource;
-	EVENT = can_send_msg_queue_empty;
-	EVENT = can_send_msg_queue_full;
+    RESOURCE = can_hardware;
+    EVENT = can_recv_evt;
+[#CanSendResourcesAndEvents]
+  };
+
+  EVENT can_recv_evt {
+    MASK = AUTO;
   };
 

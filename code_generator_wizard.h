@@ -17,6 +17,7 @@ class QFileDialog;
 class QComboBox;
 class QTextEdit;
 class QTimer;
+class QCheckBox;
 QT_END_NAMESPACE
 
 class CodeGeneratorWizard : public QWizard
@@ -112,6 +113,8 @@ public:
 private:
     QComboBox *arduino_select;
     QLabel *arduino_img_label;
+    QCheckBox *can_sender_checkbox;
+    QCheckBox *serial_user_checkbox;
 };
 
 class BuildPage : public QWizardPage

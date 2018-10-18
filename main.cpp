@@ -188,6 +188,8 @@ int main(int argc, char *argv[])
                     .set_key_mapping(key_mapping.toStdString())
                     .set_com_port(com_port)
                     .is_arduino_nano(arduino_nano)
+                    .is_can_sender(true)
+                    .use_serial_interface(true)
                     .flash(flash)
                     .configure();
             auto log = cd.execute();

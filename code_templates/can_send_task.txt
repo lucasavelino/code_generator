@@ -4,7 +4,9 @@ TASK(can_send_task)
 	while(1)
 	{
 		can_send_msg_queue.receive(to_send_msg);
+		GetResource(can_hardware);
 		CAN.sendMsgBuf(to_send_msg.id, 1, 8, to_send_msg.data);
+		ReleaseResource(can_hardware);
 	}
 }
 

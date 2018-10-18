@@ -51,8 +51,7 @@ namespace code_generator
                 Replacer can_send_task_replacer{can_send_task_oil_file_name};
                 can_send_task_replacer.add_tag("CanSendTaskPriority",
                                                QString::number(1U
-                                                               + (tasks_info.pins_reader_task_used ? 1U : 0U)
-                                                               + (tasks_info.can_recv_task_used ? 1U : 0U)))
+                                                               + (tasks_info.pins_reader_task_used ? 1U : 0U)))
                                       .add_tag("CanSendTaskStackSize", QString::number(128U));
                 can_send_task_replacer.replace_tags();
                 out_file_stream << can_send_task_replacer;
@@ -63,32 +62,51 @@ namespace code_generator
                 Replacer pins_reader_task_replacer{pins_reader_task_oil_file_name};
                 pins_reader_task_replacer.add_tag("PinsReaderTaskTime", QString::number(static_cast<unsigned int>(300/1.024F)))
                                          .add_tag("PinsReaderTaskPriority",
-                                                  QString::number(1U + (tasks_info.can_recv_task_used ? 1U : 0U)))
-                                         .add_tag("PinsReaderTaskStackSize", QString::number(128U));
+                                                  QString::number(1U))
+                                         .add_tag("PinsReaderTaskStackSize", QString::number(128U))
+                                         .add_tag("CanSendResourcesAndEvents",
+                                                  tasks_info.can_send_task_used ?
+                                                      "    RESOURCE = can_send_msg_queue_resource;\n"
+                                                      "    EVENT = can_send_msg_queue_full;" :
+                                                      "");
                 pins_reader_task_replacer.replace_tags();
                 out_file_stream << pins_reader_task_replacer;
             }
             if(tasks_info.can_recv_task_used)
             {
                 Replacer can_recv_task_replacer{can_recv_task_oil_file_name};
-                can_recv_task_replacer.add_tag("CanRecvTaskPriority", QString::number(1U))
-                                      .add_tag("CanRecvTaskStackSize", QString::number(128U));
+                can_recv_task_replacer.add_tag("CanRecvIsrPriority", QString::number(1U))
+                                      .add_tag("CanRecvIsrStackSize", QString::number(128U))
+                                      .add_tag("CanRecvTaskPriority", QString::number(tasks_info.number_of_tasks()))
+                                      .add_tag("CanRecvTaskStackSize", QString::number(128U))
+                                      .add_tag("CanSendResourcesAndEvents",
+                                               tasks_info.can_send_task_used ?
+                                                   "    RESOURCE = can_send_msg_queue_resource;\n"
+                                                   "    EVENT = can_send_msg_queue_full;" :
+                                                   "");
                 can_recv_task_replacer.replace_tags();
                 out_file_stream << can_recv_task_replacer;
             }
             if(tasks_info.timer_task_used)
             {
-                unsigned int task_priority = tasks_info.number_of_tasks();
+                unsigned int task_priority = 1U +
+                                             (tasks_info.can_send_task_used ? 1U : 0U) +
+                                             (tasks_info.pins_reader_task_used ? 1U : 0U);
                 for(const code_generator::ast::TimerHandler& timer_handler : timer_handlers)
                 {
                     Replacer timer_task_oil_replacer{timer_task_oil_file_name};
                     timer_task_oil_replacer.add_tag("TaskName", QString("OnTimer_") + timer_handler.name.c_str() + "_" + QString::number(timer_handler.milliseconds))
                             .add_tag("TaskTimerTime",QString::number(static_cast<unsigned int>(timer_handler.milliseconds/1.024F)))
                             .add_tag("TaskPriority",QString::number(task_priority))
-                            .add_tag("TimerTaskStackSize", QString::number(128U));
+                            .add_tag("TimerTaskStackSize", QString::number(128U))
+                            .add_tag("CanSendResourcesAndEvents",
+                                     tasks_info.can_send_task_used ?
+                                         "    RESOURCE = can_send_msg_queue_resource;\n"
+                                         "    EVENT = can_send_msg_queue_full;" :
+                                         "");
                     timer_task_oil_replacer.replace_tags();
                     out_file_stream << timer_task_oil_replacer;
-                    task_priority--;
+                    task_priority++;
                 }
             }
             QFile oil_fim_file(oil_fim_file_name);

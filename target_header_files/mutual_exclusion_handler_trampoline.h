@@ -1,7 +1,11 @@
 #ifndef MUTUAL_EXCLUSION_HANDLER_TRAMPOLINE_H
 #define MUTUAL_EXCLUSION_HANDLER_TRAMPOLINE_H
 
-#include "tpl_os.h"
+#undef ISR
+extern "C" {
+	#include "tpl_app_config.h"
+	#include "tpl_os.h"
+}
 #include "message_queue.h"
 
 template <unsigned int n_senders, unsigned int n_receivers>

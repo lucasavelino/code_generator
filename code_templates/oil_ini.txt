@@ -21,4 +21,8 @@ CPU busmaster {
   };
 
   APPMODE std_app_mode {};
+
+  RESOURCE can_hardware {
+    RESOURCEPROPERTY = STANDARD;
+  };
   

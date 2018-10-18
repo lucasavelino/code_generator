@@ -1,14 +1,25 @@
+ISR(can_recv_isr)
+{
+	SetEvent(can_recv_task, can_recv_evt);
+}
+
 TASK(can_recv_task)
 {
 	J1939_MSG received_msg;
 	while(1)
 	{
-		if(CAN_MSGAVAIL == CAN.checkReceive())
+		WaitEvent(can_recv_evt);
+		ClearEvent(can_recv_evt);
+		GetResource(can_hardware);
+		while(CAN_MSGAVAIL == CAN.checkReceive())
 		{
 			CAN.readMsgBuf((byte*)&received_msg.dlc, (byte*)received_msg.data);
 			received_msg.id.setPGN(CAN.getCanId());
+			ReleaseResource(can_hardware);
 			[#MessageHandlerPgnAll]
+			GetResource(can_hardware);
 		}
+		ReleaseResource(can_hardware);
 	}
 }
 
