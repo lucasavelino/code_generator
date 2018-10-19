@@ -20,6 +20,8 @@ namespace code_generator
         using x3::_val;
         using x3::_pass;
         using x3::eps;
+        using x3::eoi;
+        using x3::omit;
 
         x3::rule<class timer_handler, ast::TimerHandler> const timer_handler = "timer_handler";
         auto const timer_handler_def =
@@ -124,8 +126,7 @@ namespace code_generator
                 >> lexeme[(*(char_ - (char_(',') | char_(')'))))] % ','
                 >> ')'
                 >> '{'
-                >> lexeme[+(char_ - '}')]
-                >> '}';
+                >> lexeme[+(*(char_ - '}') >> ('}' >> omit[eoi] | char_('}')))];
         BOOST_SPIRIT_DEFINE(handler_function);
 
         auto is_digital_pin = [](auto& ctx) { _val(ctx).digital = _attr(ctx) != 'a'; };

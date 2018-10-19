@@ -26,5 +26,6 @@
         <file>code_templates/can_recv_task.txt</file>
         <file>code_templates/analog_key_handler_declaration.txt</file>
         <file>code_templates/digital_key_handler_declaration.txt</file>
+        <file>target_header_files/include_trampoline.h</file>
     </qresource>
 </RCC>
