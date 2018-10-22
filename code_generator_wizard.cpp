@@ -476,6 +476,7 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     auto *active_state_label = new QLabel(tr("Ativo em nivel lógico"));
     input_type_label->setWordWrap(true);
     active_state_label->setWordWrap(true);
+    pins_label->setMinimumWidth(50);
     layout->addWidget(can_sender_checkbox, 0, 2);
     layout->addWidget(serial_user_checkbox, 0, 4);
     layout->addWidget(keys_label, 1, 1);
@@ -509,8 +510,8 @@ void PinsConfigPage::initializePage()
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
     code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
-    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all) = code_generator::util::read_def(def_file.toStdString());
-    (void)timer_handlers;
+    code_generator::ast::OnDllLoadHandler dll_load_handler;
+    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all, dll_load_handler) = code_generator::util::read_def(def_file.toStdString());
     auto *layout = dynamic_cast<QGridLayout *>(this->layout());
     for(size_type i = 0; i < key_handlers.size(); ++i)
     {
@@ -541,7 +542,7 @@ void PinsConfigPage::initializePage()
                         auto* layout = dynamic_cast<QGridLayout *>(this->layout());
                         if(layout != nullptr)
                         {
-                            auto* digital_pin_active_state_item = layout->itemAtPosition(static_cast<int>(i) + 1, 4);
+                            auto* digital_pin_active_state_item = layout->itemAtPosition(static_cast<int>(i) + 2, 4);
                             if(digital_pin_active_state_item != nullptr)
                             {
                                 auto* digital_pin_active_state_widget = digital_pin_active_state_item->widget();
@@ -550,7 +551,7 @@ void PinsConfigPage::initializePage()
                                     digital_pin_active_state_widget->setEnabled(index == 0);
                                 }
                             }
-                            auto* key_select_item = layout->itemAtPosition(static_cast<int>(i) + 1, 3);
+                            auto* key_select_item = layout->itemAtPosition(static_cast<int>(i) + 2, 3);
                             if(key_select_item != nullptr)
                             {
                                 auto* key_select_widget = key_select_item->widget();
@@ -600,8 +601,8 @@ bool PinsConfigPage::validatePage()
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
     code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
-    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all) = code_generator::util::read_def(def_file.toStdString());
-    (void)timer_handlers;
+    code_generator::ast::OnDllLoadHandler on_dll_load;
+    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all, on_dll_load) = code_generator::util::read_def(def_file.toStdString());
     QMap<QString,int> contador_pinos_repetidos;
     QStringList pinos;
     for(size_type i = 0; i < key_handlers.size(); ++i)
@@ -684,8 +685,8 @@ void BuildPage::initializePage()
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
     code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
-    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all) = code_generator::util::read_def(def_file.toStdString());
-    (void)timer_handlers;
+    code_generator::ast::OnDllLoadHandler on_dll_load;
+    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all, on_dll_load) = code_generator::util::read_def(def_file.toStdString());
 
     QString pins_associated_to_keys = "{";
     bool first_pin = true;

@@ -19,10 +19,10 @@ DeclareResource(can_hardware);
 [#DeclareCanSendResourcesAndEvents]
 [#DeclareCanRecvResourcesAndEvents]
 [#DeclareTaskList]
-
 [#DigitalKeyHandlersPrototypeList]
 [#AnalogKeyHandlersPrototypeList]
 [#MessageHandlersPrototypeList]
+[#DllLoadHandlerPrototype]
 
 const TaskType can_send_msg_queue_senders[] =
 {

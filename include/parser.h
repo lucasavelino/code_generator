@@ -56,9 +56,16 @@ namespace code_generator
                 ];
         BOOST_SPIRIT_DEFINE(msg_handler_pgn_all);
 
+        x3::rule<class on_dll_load_handler, ast::OnDllLoadHandler> const on_dll_load_handler = "on_dll_load_handler";
+        auto const on_dll_load_handler_def =
+                lexeme[
+                    lit("OnDLL_Load")[declared_if_matches]
+                ];
+        BOOST_SPIRIT_DEFINE(on_dll_load_handler);
+
         x3::rule<class any_handler, ast::AnyHandler> const any_handler = "any_handler";
         auto const any_handler_def =
-                (timer_handler | key_handler | msg_handler_pgn_all | *char_);
+                (timer_handler | key_handler | msg_handler_pgn_all | on_dll_load_handler | *char_);
         BOOST_SPIRIT_DEFINE(any_handler);
 
         x3::rule<class signal_value, ast::SignalValue> const signal_value = "signal_value";

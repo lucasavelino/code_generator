@@ -22,8 +22,9 @@ namespace code_generator
             std::vector<code_generator::ast::TimerHandler> timer_handlers;
             std::vector<code_generator::ast::KeyHandler> key_handlers;
             code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
-            std::tie(timer_handlers, key_handlers, msg_handler_pgn_all) = util::read_def(def_file_path.toStdString());
-            util::SystemTasksInfo tasks_info(timer_handlers.size(), key_handlers.size() != 0, can_sender, msg_handler_pgn_all.declared, serial_user);
+            code_generator::ast::OnDllLoadHandler on_dll_load;
+            std::tie(timer_handlers, key_handlers, msg_handler_pgn_all, on_dll_load) = util::read_def(def_file_path.toStdString());
+            util::SystemTasksInfo tasks_info(timer_handlers.size(), key_handlers.size() != 0, can_sender, msg_handler_pgn_all.declared, on_dll_load.declared, serial_user);
             auto msgs = util::read_dbf(dbf_file_path.toStdString());
             code_generator::OilFileGenerator oil_generator{output_oil_file_path,
                                                            R"(:/code_templates/timer_task_oil.txt)",
@@ -49,10 +50,11 @@ namespace code_generator
             std::vector<code_generator::util::TimerTask> timer_tasks;
             std::vector<code_generator::util::KeyTask> key_tasks;
             code_generator::util::PgnAllTask pgn_all_task;
+            code_generator::util::DllLoadTask dll_load_task;
             std::vector<std::string> functions;
             bool error_on_key_mapping{false};
             QString error_on_key_mapping_str;
-            std::tie(timer_tasks, key_tasks, pgn_all_task, functions, error_on_key_mapping_str) = util::get_functions(cpp_src_file_path.toStdString(), timer_handlers, key_handlers, key_mapping, msg_handler_pgn_all, error_on_key_mapping);
+            std::tie(timer_tasks, key_tasks, pgn_all_task, dll_load_task, functions, error_on_key_mapping_str) = util::get_functions(cpp_src_file_path.toStdString(), timer_handlers, key_handlers, key_mapping, msg_handler_pgn_all, on_dll_load, error_on_key_mapping);
             if(error_on_key_mapping)
             {
                 return error_on_key_mapping_str;
@@ -69,7 +71,7 @@ namespace code_generator
                                                                 R"(:/code_templates/can_recv_task.txt)",
                                                                 R"(:/code_templates/timer_task_code.txt)",
                                                                 R"(:/code_templates/pins_reader_task_code.txt)"};
-            cpp_file_generator.generate(functions, timer_tasks, key_tasks, global_variables_declaration, pgn_all_task, tasks_info);
+            cpp_file_generator.generate(functions, timer_tasks, key_tasks, global_variables_declaration, pgn_all_task, dll_load_task, tasks_info);
             QFile(J1939Includes_header_output_path).remove();
             QFile(message_queue_header_output_path).remove();
             QFile(windows_types_header_output_path).remove();

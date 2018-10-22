@@ -32,6 +32,7 @@ namespace code_generator
                       const std::vector<code_generator::util::KeyTask>& key_tasks,
                       const std::string& global_variables_declaration,
                       const util::PgnAllTask& pgn_all_task,
+                      const util::DllLoadTask& dll_load_task,
                       const util::SystemTasksInfo& tasks_info)
         {
             QFile out_file{output_file_name};
@@ -98,6 +99,8 @@ namespace code_generator
             QTextStream send_msg_task_list(&send_msg_task_list_str);
             QString message_handler_prototype_list_str;
             QTextStream message_handler_prototype_list(&message_handler_prototype_list_str);
+            QString dll_load_handler_prototype_str;
+            QTextStream dll_load_handler_prototype(&dll_load_handler_prototype_str);
             if(tasks_info.pins_reader_task_used)
             {
                 declare_task_list << "DeclareTask(pins_reader);\n";
@@ -114,8 +117,12 @@ namespace code_generator
                                    << (tasks_info.timer_task_used ? ",\n" : "\n");
                 if(tasks_info.message_handler_pgn_all_used)
                 {
-                    message_handler_prototype_list << "void OnPGN_All(J1939_MSG&);\n";
+                    message_handler_prototype_list << "void OnPGN_All(J1939_MSG&);";
                 }
+            }
+            if(tasks_info.dll_load_handler_used)
+            {
+                dll_load_handler_prototype << "void " << dll_load_task.task_name.c_str() << "();";
             }
             auto first_time_timer_task_loop = true;
             for(const auto& timer_task : timer_tasks)
@@ -150,6 +157,7 @@ namespace code_generator
                                  .add_tag("AnalogKeyHandlersPrototypeList", analog_key_handlers_prototype_list.readAll())
                                  .add_tag("MessageHandlersPrototypeList", message_handler_prototype_list.readAll())
                                  .add_tag("SendMsgTaskList", send_msg_task_list.readAll())
+                                 .add_tag("DllLoadHandlerPrototype", dll_load_handler_prototype.readAll())
                                  .add_tag("SendMsgReceiver", tasks_info.can_send_task_used ?
                                                                 "	can_send_task" :
                                                                 "")
@@ -172,6 +180,10 @@ namespace code_generator
             declarations_replacer.replace_tags();
             out_file_stream << declarations_replacer;
             out_file_stream << global_variables_declaration.c_str() << "\n\n";
+            for(const auto& function : functions)
+            {
+                out_file_stream << function.c_str() << "\n\n";
+            }
             Replacer setup_func_replacer{setup_func_file_name};
             setup_func_replacer.add_tag("SerialInit", tasks_info.serial_used ? "Serial.begin(115200);" : "")
                                .add_tag("InitializeDigitalInputPins",
@@ -180,7 +192,10 @@ namespace code_generator
                                          "\t{\n"
                                          "\t\tpinMode(digital_key_handlers[i].key, INPUT);\n"
                                          "\t}" :
-                                         ""));
+                                         ""))
+                               .add_tag("OnDllLoadHandler", tasks_info.dll_load_handler_used ?
+                                                            "OnDLL_Load();":
+                                                            "");
             setup_func_replacer.replace_tags();
             out_file_stream << setup_func_replacer;
             QFile can_send_task_file(can_send_task_file_name);
@@ -240,9 +255,12 @@ namespace code_generator
                 can_recv_task_replacer.replace_tags();
                 out_file_stream << can_recv_task_replacer;
             }
-            for(const auto& function : functions)
+            if(tasks_info.dll_load_handler_used)
             {
-                out_file_stream << function.c_str() << "\n\n";
+                out_file_stream << "void OnDLL_Load()\n"
+                                << "{\n"
+                                << dll_load_task.task_inner_code.c_str()
+                                << "}\n\n";
             }
         }
     private:

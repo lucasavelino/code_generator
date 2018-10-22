@@ -3,5 +3,6 @@ void setup()
 	[#SerialInit]
 	while (CAN_OK != CAN.begin(CAN_250KBPS)){}
 [#InitializeDigitalInputPins]
+	[#OnDllLoadHandler]
 }
 
