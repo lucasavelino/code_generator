@@ -4,6 +4,10 @@ public:
 	[#DBMsgName]()
 		: J1939_MSG([#DBMsgPGN], [#DBMsgLength]), [#DBMsgSignalsConstructorInitializerList]
 	{}
+	[#DBMsgName](const J1939_MSG& other)
+		: J1939_MSG(other), [#DBMsgSignalsConstructorInitializerList]
+	{}
+	enum { _PGN_VALUE = [#DBMsgPGN] };
 	[#DBMsgSignalsDeclarationList]
 };
 

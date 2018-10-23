@@ -230,19 +230,19 @@ public:
 		extendedId = (extendedId & 0x1FFF00FF) | pduspecific;
 	}
 
-	uint8_t getSourceAddress()
+	uint8_t getSourceAddress() const
 	{
 		return (uint8_t)(extendedId & 0xFF);
 	}
 
-	uint8_t getPDUFormat()
+	uint8_t getPDUFormat() const
 	{
 		uint32_t pgn = extendedId & 0x3FFFFFF;// excluding priority 3 bits
 		pgn = (pgn >> 16) & 0xFF; // excluding 8bit Source Address and 8 bit Pdu Specific and 1 bit reserved, 1 bit datapage
 		return (uint8_t)pgn;
 	}
 
-	uint32_t getPGN()
+	uint32_t getPGN() const
 	{
 		uint32_t pgn = 0;
 		if(getPDUFormat() < 240)
@@ -260,21 +260,21 @@ public:
 		return pgn;
 	}
 
-	uint8_t getDataPage()
+	uint8_t getDataPage() const
 	{
 		uint32_t pgn = extendedId & 0x3FFFFFF;// excluding priority 3 bits
 		pgn = (pgn >> 24) & 1; // excluding 8bit Source Address and 8 bit Pdu Specific and 1 bit reserved
 		return (uint8_t)pgn;
 	}
 
-	uint8_t getPriority()
+	uint8_t getPriority() const
 	{
 		uint32_t pgn = extendedId & 0x1C000000;
 		pgn = pgn >> 26;
 		return (uint8_t)pgn;
 	}
 
-	uint8_t getPDUSpecific()
+	uint8_t getPDUSpecific() const
 	{
 		uint32_t pgn = (extendedId >> 8) & 0xFF; // excluding priority 3 bits
 		return (uint8_t)pgn;

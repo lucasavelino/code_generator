@@ -29,6 +29,11 @@ namespace code_generator
             bool declared{false};
         };
 
+        struct MessageHandlerPgnName
+        {
+            std::string type_name;
+        };
+
         struct OnDllLoadHandler
         {
             bool declared{false};
@@ -36,7 +41,7 @@ namespace code_generator
 
         struct AnyHandler
         {
-            boost::spirit::x3::variant<TimerHandler, KeyHandler, MessageHandlerPgnAll, OnDllLoadHandler, std::string> handler;
+            boost::spirit::x3::variant<TimerHandler, KeyHandler, MessageHandlerPgnAll, MessageHandlerPgnName, OnDllLoadHandler, std::string> handler;
         };
 
         struct SignalValue
@@ -104,6 +109,10 @@ BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::KeyHandler,
 
 BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::MessageHandlerPgnAll,
         declared
+)
+
+BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::MessageHandlerPgnName,
+        type_name
 )
 
 BOOST_FUSION_ADAPT_STRUCT(code_generator::ast::OnDllLoadHandler,

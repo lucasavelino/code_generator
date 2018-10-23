@@ -1,0 +1,5 @@
+			switch(received_msg.id.getPGN())
+			{
+[#OnPgnNameCaseList]
+				default: break;
+			}

@@ -16,7 +16,8 @@ namespace code_generator
                          QString digital_key_handler_declaration_file_name,
                          QString analog_key_handler_declaration_file_name,
                          QString setup_func_file_name, QString can_send_task_file_name,
-                         QString can_recv_task_file_name,
+                         QString can_recv_task_file_name, QString pgn_name_switch_file_name,
+                         QString pgn_name_case_file_name,
                          QString timer_task_code_file_name, QString pins_reader_task_code_file_name)
                 : output_file_name(std::move(output_file_name)), includes_file_name(std::move(includes_file_name)),
                   msg_types_header_file_name(std::move(msg_types_header_file_name)), declarations_file_name(std::move(declarations_file_name)),
@@ -24,12 +25,15 @@ namespace code_generator
                   analog_key_handler_declaration_file_name(std::move(analog_key_handler_declaration_file_name)),
                   setup_func_file_name(std::move(setup_func_file_name)), can_send_task_file_name(std::move(can_send_task_file_name)),
                   can_recv_task_file_name(std::move(can_recv_task_file_name)),
+                  pgn_name_switch_file_name(std::move(pgn_name_switch_file_name)),
+                  pgn_name_case_file_name(std::move(pgn_name_case_file_name)),
                   timer_task_code_file_name(std::move(timer_task_code_file_name)), pins_reader_task_code_file_name(std::move(pins_reader_task_code_file_name))
         {}
 
         void generate(const std::vector<std::string>& functions,
                       const std::vector<code_generator::util::TimerTask>& timer_tasks,
                       const std::vector<code_generator::util::KeyTask>& key_tasks,
+                      const std::vector<code_generator::util::PgnNameTask>& pgn_name_tasks,
                       const std::string& global_variables_declaration,
                       const util::PgnAllTask& pgn_all_task,
                       const util::DllLoadTask& dll_load_task,
@@ -118,6 +122,14 @@ namespace code_generator
                 if(tasks_info.message_handler_pgn_all_used)
                 {
                     message_handler_prototype_list << "void OnPGN_All(J1939_MSG&);";
+                }
+                if(tasks_info.message_handler_pgn_name_used)
+                {
+                    for(const auto& pgn_name_task : pgn_name_tasks)
+                    {
+                        message_handler_prototype_list << "void OnPGNName_" << pgn_name_task.type_name.c_str()
+                                                       << "(" << pgn_name_task.type_name.c_str() << ");";
+                    }
                 }
             }
             if(tasks_info.dll_load_handler_used)
@@ -212,7 +224,7 @@ namespace code_generator
             {
                 code_generator::Replacer timer_task_code_replacer{timer_task_code_file_name};
                 timer_task_code_replacer.add_tag("TaskName", timer_task.task_name.c_str())
-                        .add_tag("TaskInnerCode", timer_task.inner_code.c_str());
+                        .add_tag("TaskInnerCode", timer_task.task_inner_code.c_str());
                 timer_task_code_replacer.replace_tags();
                 out_file_stream << timer_task_code_replacer;
             }
@@ -223,7 +235,7 @@ namespace code_generator
                 key_task_code << "void " << key_task.task_name.c_str()
                               << "("
                               << (key_task.digital ? key_task.task_parameter.c_str() : "unsigned int KeyValue")
-                              << ")\n{\n"
+                              << ")\n{"
                               << key_task.task_inner_code.c_str() << "}\n\n";
                 out_file_stream << key_task_code.readAll();
             }
@@ -239,17 +251,43 @@ namespace code_generator
             }
             if(tasks_info.can_recv_task_used)
             {
+                QString msg_handler_pgn_name_switch_case_str;
+                QTextStream msg_handler_pgn_name_switch_case(&msg_handler_pgn_name_switch_case_str);
                 if(tasks_info.message_handler_pgn_all_used)
                 {
                     QString msg_handler_pgn_all_code_str;
                     QTextStream msg_handler_pgn_all_code(&msg_handler_pgn_all_code_str);
                     msg_handler_pgn_all_code << "void " << pgn_all_task.task_name.c_str()
-                                             << "(J1939_MSG& RxMsg)\n{\n"
+                                             << "(J1939_MSG& RxMsg)\n{"
                                              << pgn_all_task.task_inner_code.c_str() << "}\n\n";
                     out_file_stream << msg_handler_pgn_all_code.readAll();
                 }
+                if(tasks_info.message_handler_pgn_name_used)
+                {
+                    QString pgn_name_case_list_str;
+                    QTextStream pgn_name_case_list(&pgn_name_case_list_str);
+                    for(const auto& pgn_name_task : pgn_name_tasks)
+                    {
+                        QString msg_handler_pgn_name_code_str;
+                        QTextStream msg_handler_pgn_name_code(&msg_handler_pgn_name_code_str);
+                        msg_handler_pgn_name_code << "void " << pgn_name_task.task_name.c_str()
+                                                  << "(" << pgn_name_task.type_name.c_str() << " RxMsg)\n{"
+                                                  << pgn_name_task.task_inner_code.c_str() << "}\n\n";
+                        out_file_stream << msg_handler_pgn_name_code.readAll();
+                        Replacer pgn_name_case_replacer{pgn_name_case_file_name};
+                        pgn_name_case_replacer.add_tag("MsgTypeName", pgn_name_task.type_name.c_str());
+                        pgn_name_case_replacer.replace_tags();
+                        pgn_name_case_list << pgn_name_case_replacer;
+                    }
+                    Replacer pgn_name_switch_replacer{pgn_name_switch_file_name};
+                    pgn_name_switch_replacer.add_tag("OnPgnNameCaseList", pgn_name_case_list.readAll());
+                    pgn_name_switch_replacer.replace_tags();
+                    msg_handler_pgn_name_switch_case << pgn_name_switch_replacer;
+                }
                 Replacer can_recv_task_replacer{can_recv_task_file_name};
-                can_recv_task_replacer.add_tag("MessageHandlerPgnAll",
+                can_recv_task_replacer.add_tag("MessageHandlerPgnNameSwitchCase",
+                                                msg_handler_pgn_name_switch_case.readAll())
+                                      .add_tag("MessageHandlerPgnAll",
                                                (tasks_info.message_handler_pgn_all_used ?
                                                     "OnPGN_All(received_msg);" : ""));
                 can_recv_task_replacer.replace_tags();
@@ -258,7 +296,7 @@ namespace code_generator
             if(tasks_info.dll_load_handler_used)
             {
                 out_file_stream << "void OnDLL_Load()\n"
-                                << "{\n"
+                                << "{"
                                 << dll_load_task.task_inner_code.c_str()
                                 << "}\n\n";
             }
@@ -273,6 +311,8 @@ namespace code_generator
         QString setup_func_file_name;
         QString can_send_task_file_name;
         QString can_recv_task_file_name;
+        QString pgn_name_switch_file_name;
+        QString pgn_name_case_file_name;
         QString timer_task_code_file_name;
         QString pins_reader_task_code_file_name;
     };

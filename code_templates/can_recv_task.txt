@@ -16,6 +16,7 @@ TASK(can_recv_task)
 			CAN.readMsgBuf((byte*)&received_msg.dlc, (byte*)received_msg.data);
 			received_msg.id.setPGN(CAN.getCanId());
 			ReleaseResource(can_hardware);
+[#MessageHandlerPgnNameSwitchCase]
 			[#MessageHandlerPgnAll]
 			GetResource(can_hardware);
 		}

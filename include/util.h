@@ -20,9 +20,11 @@ namespace code_generator
 
             HandlersExtractor(std::vector<ast::TimerHandler> &timers,
                               std::vector<ast::KeyHandler> &keys,
+                              std::vector<ast::MessageHandlerPgnName>& pgn_name_msgs,
                               ast::MessageHandlerPgnAll &m_pgn_all,
                               ast::OnDllLoadHandler& dll_load)
-                : timers(timers), keys(keys), m_pgn_all(m_pgn_all), dll_load(dll_load)
+                : timers(timers), keys(keys), pgn_name_msgs(pgn_name_msgs)
+                , m_pgn_all(m_pgn_all), dll_load(dll_load)
             {}
 
             void operator()(const code_generator::ast::TimerHandler& t)
@@ -38,6 +40,11 @@ namespace code_generator
             void operator()(code_generator::ast::MessageHandlerPgnAll m)
             {
                 m_pgn_all = m;
+            }
+
+            void operator()(code_generator::ast::MessageHandlerPgnName m)
+            {
+                pgn_name_msgs.push_back(m);
             }
 
             void operator()(code_generator::ast::OnDllLoadHandler d)
@@ -57,6 +64,7 @@ namespace code_generator
 
             std::vector<code_generator::ast::TimerHandler>& timers;
             std::vector<code_generator::ast::KeyHandler>& keys;
+            std::vector<code_generator::ast::MessageHandlerPgnName>& pgn_name_msgs;
             code_generator::ast::MessageHandlerPgnAll& m_pgn_all;
             code_generator::ast::OnDllLoadHandler& dll_load;
         };
@@ -66,7 +74,7 @@ namespace code_generator
             std::string timer_name;
             std::string task_name;
             unsigned int milliseconds;
-            std::string inner_code;
+            std::string task_inner_code;
         };
 
         struct KeyTask
@@ -77,6 +85,13 @@ namespace code_generator
             bool active_state_high;
             std::string task_name;
             std::string task_parameter;
+            std::string task_inner_code;
+        };
+
+        struct PgnNameTask
+        {
+            std::string type_name;
+            std::string task_name;
             std::string task_inner_code;
         };
 
@@ -100,12 +115,15 @@ namespace code_generator
             SystemTasksInfo(SystemTasksInfo&&) = default;
             SystemTasksInfo& operator=(const SystemTasksInfo&) = default;
             SystemTasksInfo& operator=(SystemTasksInfo&&) = default;
-            SystemTasksInfo(unsigned int total_timer_tasks, bool pins_reader_task_used,
-                                bool can_send_task_used, bool message_handler_pgn_all_used, bool dll_load_handler_used, bool serial_used)
-                : total_timer_tasks{total_timer_tasks}, pins_reader_task_used{pins_reader_task_used}
-                , can_send_task_used{can_send_task_used}, can_recv_task_used{message_handler_pgn_all_used}
-                , timer_task_used{total_timer_tasks != 0}, message_handler_pgn_all_used{message_handler_pgn_all_used}
-                , dll_load_handler_used{dll_load_handler_used}, serial_used{serial_used}
+            SystemTasksInfo(unsigned int _total_timer_tasks, bool _pins_reader_task_used,
+                            bool _can_send_task_used, bool _message_handler_pgn_all_used,
+                            bool _message_handler_pgn_name_used, bool _dll_load_handler_used, bool _serial_used)
+                : total_timer_tasks{_total_timer_tasks}, pins_reader_task_used{_pins_reader_task_used}
+                , can_send_task_used{_can_send_task_used}
+                , can_recv_task_used{_message_handler_pgn_all_used || _message_handler_pgn_name_used}
+                , timer_task_used{_total_timer_tasks != 0}, message_handler_pgn_all_used{_message_handler_pgn_all_used}
+                , message_handler_pgn_name_used{_message_handler_pgn_name_used}
+                , dll_load_handler_used{_dll_load_handler_used}, serial_used{_serial_used}
             {}
 
             unsigned int number_of_tasks() const noexcept
@@ -120,6 +138,7 @@ namespace code_generator
             bool can_recv_task_used{false};
             bool timer_task_used{false};
             bool message_handler_pgn_all_used{false};
+            bool message_handler_pgn_name_used{false};
             bool dll_load_handler_used{false};
             bool serial_used{false};
         };
@@ -127,6 +146,7 @@ namespace code_generator
         inline std::tuple<
                 std::vector<code_generator::ast::TimerHandler>,
                 std::vector<code_generator::ast::KeyHandler>,
+                std::vector<code_generator::ast::MessageHandlerPgnName>,
                 code_generator::ast::MessageHandlerPgnAll,
                 code_generator::ast::OnDllLoadHandler
         > read_def(const std::string& file_name)
@@ -137,16 +157,17 @@ namespace code_generator
             std::string line;
             std::vector<code_generator::ast::TimerHandler> timers;
             std::vector<code_generator::ast::KeyHandler> keys;
+            std::vector<code_generator::ast::MessageHandlerPgnName> pgn_name_msgs;
             code_generator::ast::MessageHandlerPgnAll m_pgn_all;
             code_generator::ast::OnDllLoadHandler on_dll_load;
-            HandlersExtractor handlers_extractor{timers, keys, m_pgn_all, on_dll_load};
+            HandlersExtractor handlers_extractor{timers, keys, pgn_name_msgs, m_pgn_all, on_dll_load};
             while(std::getline(in_file,line))
             {
                 code_generator::ast::AnyHandler handler;
                 phrase_parse(std::begin(line), std::end(line), any_handler, space, handler);
                 handlers_extractor(handler);
             }
-            return std::make_tuple(std::move(timers), std::move(keys), std::move(m_pgn_all), std::move(on_dll_load));
+            return std::make_tuple(std::move(timers), std::move(keys), std::move(pgn_name_msgs), std::move(m_pgn_all), std::move(on_dll_load));
         }
 
         inline std::vector<code_generator::ast::Message> read_dbf(const std::string& file_name)
@@ -224,6 +245,7 @@ namespace code_generator
         inline std::tuple<
                 std::vector<code_generator::util::TimerTask>,
                 std::vector<code_generator::util::KeyTask>,
+                std::vector<code_generator::util::PgnNameTask>,
                 code_generator::util::PgnAllTask,
                 code_generator::util::DllLoadTask,
                 std::vector<std::string>,
@@ -231,6 +253,7 @@ namespace code_generator
         > get_functions(const std::string &file_name,
                         const std::vector<code_generator::ast::TimerHandler>& timer_handlers,
                         const std::vector<code_generator::ast::KeyHandler>& key_handlers,
+                        const std::vector<code_generator::ast::MessageHandlerPgnName>& pgn_name_msgs,
                         const std::map<std::string, ast::PinProperties>& key_mapping,
                         const code_generator::ast::MessageHandlerPgnAll& m_pgn_all,
                         const code_generator::ast::OnDllLoadHandler& on_dll_load,
@@ -244,6 +267,7 @@ namespace code_generator
             std::vector<std::string> functions;
             std::vector<code_generator::util::TimerTask> timer_tasks;
             std::vector<code_generator::util::KeyTask> key_tasks;
+            std::vector<code_generator::util::PgnNameTask> pgn_name_tasks;
             code_generator::util::PgnAllTask msg_handler_pgn_all;
             code_generator::util::DllLoadTask on_dll_load_task;
             const auto cpp_file_str{read_whole_file_as_string(file_name)};
@@ -269,6 +293,13 @@ namespace code_generator
                                      ss << "OnKey_" << key_handler.key;
                                      return ss.str() == function.name;
                                  });
+                    auto pgn_name_handler = std::find_if(pgn_name_msgs.begin(), pgn_name_msgs.end(),
+                                        [&function](const auto& pgn_name_handler)
+                                        {
+                                            std::stringstream ss;
+                                            ss << "OnPGNName_" << pgn_name_handler.type_name;
+                                            return ss.str() == function.name;
+                                        });
                     bool is_msg_handler_pgn_all = m_pgn_all.declared && function.name == "OnPGN_All";
                     bool is_on_dll_load_handler = on_dll_load.declared && function.name == "OnDLL_Load";
                     if(timer_handlers.end() != timer_handler)
@@ -285,6 +316,9 @@ namespace code_generator
                             error_ts << "Erro: A função " << QString::fromStdString(function.name) << " não existe no mapeamento de teclas para pinos\n";
                             error = true;
                         }
+                    } else if(pgn_name_msgs.end() != pgn_name_handler)
+                    {
+                        pgn_name_tasks.push_back(PgnNameTask{pgn_name_handler->type_name, function.name, function.inner_code});
                     } else if(is_msg_handler_pgn_all)
                     {
                         msg_handler_pgn_all.task_name = function.name;
@@ -299,7 +333,7 @@ namespace code_generator
                     }
                 }
             }
-            return std::make_tuple(timer_tasks,key_tasks,msg_handler_pgn_all,on_dll_load_task,functions,error_ts.readAll());
+            return std::make_tuple(timer_tasks,key_tasks,pgn_name_tasks,msg_handler_pgn_all,on_dll_load_task,functions,error_ts.readAll());
         }
 
         inline std::string get_global_variables_declaration(const std::string& file_name)

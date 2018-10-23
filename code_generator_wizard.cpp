@@ -509,9 +509,10 @@ void PinsConfigPage::initializePage()
     auto def_file = field("def_file").toString();
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
+    std::vector<code_generator::ast::MessageHandlerPgnName> pgn_name_msgs;
     code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
     code_generator::ast::OnDllLoadHandler dll_load_handler;
-    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all, dll_load_handler) = code_generator::util::read_def(def_file.toStdString());
+    std::tie(timer_handlers, key_handlers, pgn_name_msgs, msg_handler_pgn_all, dll_load_handler) = code_generator::util::read_def(def_file.toStdString());
     auto *layout = dynamic_cast<QGridLayout *>(this->layout());
     for(size_type i = 0; i < key_handlers.size(); ++i)
     {
@@ -600,9 +601,10 @@ bool PinsConfigPage::validatePage()
     auto def_file = field("def_file").toString();
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
+    std::vector<code_generator::ast::MessageHandlerPgnName> pgn_name_msgs;
     code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
     code_generator::ast::OnDllLoadHandler on_dll_load;
-    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all, on_dll_load) = code_generator::util::read_def(def_file.toStdString());
+    std::tie(timer_handlers, key_handlers, pgn_name_msgs, msg_handler_pgn_all, on_dll_load) = code_generator::util::read_def(def_file.toStdString());
     QMap<QString,int> contador_pinos_repetidos;
     QStringList pinos;
     for(size_type i = 0; i < key_handlers.size(); ++i)
@@ -684,9 +686,10 @@ void BuildPage::initializePage()
 
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
+    std::vector<code_generator::ast::MessageHandlerPgnName> pgn_name_msgs;
     code_generator::ast::MessageHandlerPgnAll msg_handler_pgn_all;
     code_generator::ast::OnDllLoadHandler on_dll_load;
-    std::tie(timer_handlers,key_handlers,msg_handler_pgn_all, on_dll_load) = code_generator::util::read_def(def_file.toStdString());
+    std::tie(timer_handlers, key_handlers, pgn_name_msgs, msg_handler_pgn_all, on_dll_load) = code_generator::util::read_def(def_file.toStdString());
 
     QString pins_associated_to_keys = "{";
     bool first_pin = true;

@@ -1,0 +1,3 @@
+				case [#MsgTypeName]::_PGN_VALUE:
+					OnPGNName_[#MsgTypeName](received_msg);
+					break;

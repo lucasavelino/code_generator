@@ -56,6 +56,15 @@ namespace code_generator
                 ];
         BOOST_SPIRIT_DEFINE(msg_handler_pgn_all);
 
+        x3::rule<class msg_handler_pgn_name, ast::MessageHandlerPgnName> const msg_handler_pgn_name = "msg_handler_pgn_name";
+        auto const msg_handler_pgn_name_def =
+                lexeme[
+                    lit("OnPGNName_")
+                    >> +(char_ - '_')
+                    >> lit("_Wrapper")
+                ];
+        BOOST_SPIRIT_DEFINE(msg_handler_pgn_name);
+
         x3::rule<class on_dll_load_handler, ast::OnDllLoadHandler> const on_dll_load_handler = "on_dll_load_handler";
         auto const on_dll_load_handler_def =
                 lexeme[
@@ -65,7 +74,7 @@ namespace code_generator
 
         x3::rule<class any_handler, ast::AnyHandler> const any_handler = "any_handler";
         auto const any_handler_def =
-                (timer_handler | key_handler | msg_handler_pgn_all | on_dll_load_handler | *char_);
+                (timer_handler | key_handler | msg_handler_pgn_all | msg_handler_pgn_name | on_dll_load_handler | *char_);
         BOOST_SPIRIT_DEFINE(any_handler);
 
         x3::rule<class signal_value, ast::SignalValue> const signal_value = "signal_value";
@@ -132,8 +141,7 @@ namespace code_generator
                 >> '('
                 >> lexeme[(*(char_ - (char_(',') | char_(')'))))] % ','
                 >> ')'
-                >> '{'
-                >> lexeme[+(*(char_ - '}') >> ('}' >> omit[eoi] | char_('}')))];
+                >> lexeme[omit[char_('{')] >> +(*(char_ - '}') >> ('}' >> omit[eoi] | char_('}')))];
         BOOST_SPIRIT_DEFINE(handler_function);
 
         auto is_digital_pin = [](auto& ctx) { _val(ctx).digital = _attr(ctx) != 'a'; };
