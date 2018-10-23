@@ -235,7 +235,7 @@ namespace code_generator
                 key_task_code << "void " << key_task.task_name.c_str()
                               << "("
                               << (key_task.digital ? key_task.task_parameter.c_str() : "unsigned int KeyValue")
-                              << ")\n{"
+                              << ")\n{\n"
                               << key_task.task_inner_code.c_str() << "}\n\n";
                 out_file_stream << key_task_code.readAll();
             }
@@ -258,7 +258,7 @@ namespace code_generator
                     QString msg_handler_pgn_all_code_str;
                     QTextStream msg_handler_pgn_all_code(&msg_handler_pgn_all_code_str);
                     msg_handler_pgn_all_code << "void " << pgn_all_task.task_name.c_str()
-                                             << "(J1939_MSG& RxMsg)\n{"
+                                             << "(J1939_MSG& RxMsg)\n{\n"
                                              << pgn_all_task.task_inner_code.c_str() << "}\n\n";
                     out_file_stream << msg_handler_pgn_all_code.readAll();
                 }
@@ -271,7 +271,7 @@ namespace code_generator
                         QString msg_handler_pgn_name_code_str;
                         QTextStream msg_handler_pgn_name_code(&msg_handler_pgn_name_code_str);
                         msg_handler_pgn_name_code << "void " << pgn_name_task.task_name.c_str()
-                                                  << "(" << pgn_name_task.type_name.c_str() << " RxMsg)\n{"
+                                                  << "(" << pgn_name_task.type_name.c_str() << " RxMsg)\n{\n"
                                                   << pgn_name_task.task_inner_code.c_str() << "}\n\n";
                         out_file_stream << msg_handler_pgn_name_code.readAll();
                         Replacer pgn_name_case_replacer{pgn_name_case_file_name};
@@ -296,7 +296,7 @@ namespace code_generator
             if(tasks_info.dll_load_handler_used)
             {
                 out_file_stream << "void OnDLL_Load()\n"
-                                << "{"
+                                << "{\n"
                                 << dll_load_task.task_inner_code.c_str()
                                 << "}\n\n";
             }

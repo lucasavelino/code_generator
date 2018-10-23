@@ -1,5 +1,6 @@
 TASK([#TaskName])
-{[#TaskInnerCode]
+{
+[#TaskInnerCode]
 	TerminateTask();
 }
 
