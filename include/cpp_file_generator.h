@@ -37,6 +37,7 @@ namespace code_generator
                       const std::string& global_variables_declaration,
                       const util::PgnAllTask& pgn_all_task,
                       const util::DllLoadTask& dll_load_task,
+                      const unsigned int ecu_address,
                       const util::SystemTasksInfo& tasks_info)
         {
             QFile out_file{output_file_name};
@@ -210,15 +211,12 @@ namespace code_generator
                                                             "");
             setup_func_replacer.replace_tags();
             out_file_stream << setup_func_replacer;
-            QFile can_send_task_file(can_send_task_file_name);
-            if(!can_send_task_file.open(QFile::ReadOnly | QFile::Text))
-            {
-                qDebug() << "Could not open file " << can_send_task_file_name;
-                return;
-            }
             if(tasks_info.can_send_task_used)
             {
-                out_file_stream << can_send_task_file.readAll();
+                Replacer can_send_task_replacer{can_send_task_file_name};
+                can_send_task_replacer.add_tag("ECUAddress", QString::number(ecu_address));
+                can_send_task_replacer.replace_tags();
+                out_file_stream << can_send_task_replacer;
             }
             for(const auto& timer_task : timer_tasks)
             {

@@ -189,6 +189,7 @@ int main(int argc, char *argv[])
                     .set_com_port(com_port)
                     .is_arduino_nano(arduino_nano)
                     .is_can_sender(true)
+                    .set_ecu_address(0)
                     .use_serial_interface(true)
                     .flash(flash)
                     .configure();

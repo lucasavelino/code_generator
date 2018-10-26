@@ -3,6 +3,7 @@
 #include <QPair>
 #include <QMap>
 #include <QSettings>
+#include <limits>
 #include "code_generator_wizard.h"
 
 
@@ -33,6 +34,7 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     auto *trampoline_rtos_configs_page = new TrampolineRTOSConfigsPage;
     auto *output_configs_page = new OutputConfigsPage;
     auto *pins_config_page = new PinsConfigPage;
+    auto *code_config_page = new CodeConfigPage;
     auto *build_page = new BuildPage;
     auto *com_port_page = new ComPortPage;
     auto *load_page = new LoadPage;
@@ -43,6 +45,7 @@ CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
     addPage(trampoline_rtos_configs_page);
     addPage(output_configs_page);
     addPage(pins_config_page);
+    addPage(code_config_page);
     addPage(build_page);
     addPage(com_port_page);
     addPage(load_page);
@@ -94,6 +97,7 @@ LoadConfigsPage::LoadConfigsPage(QWidget *parent)
                 setField("arduino_type", settings.value("arduino_type",""));
                 setField("can_sender", settings.value("can_sender",""));
                 setField("serial_user", settings.value("serial_user",""));
+                setField("ecu_address", settings.value("ecu_address",""));
             }
     );
 
@@ -435,8 +439,6 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     arduino_select->addItem(tr("Arduino UNO"));
     arduino_select->addItem(tr("Arduino NANO"));
     arduino_img_label = new QLabel;
-    can_sender_checkbox = new QCheckBox(tr("A ECU envia mensagens pelo barremento CAN?"));
-    serial_user_checkbox = new QCheckBox(tr("A ECU faz uso da interface serial?"));
 
     connect(arduino_select,
             QOverload<int>::of(&QComboBox::activated),
@@ -463,9 +465,6 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
             });
 
     registerField("arduino_type", arduino_select, "currentText", "currentTextChanged");
-    registerField("can_sender", can_sender_checkbox);
-    registerField("serial_user", serial_user_checkbox);
-    setButtonText(QWizard::NextButton, tr("C&ompilar"));
 
     auto *layout = new QGridLayout;
     layout->addWidget(arduino_select, 0, 0);
@@ -477,12 +476,10 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     input_type_label->setWordWrap(true);
     active_state_label->setWordWrap(true);
     pins_label->setMinimumWidth(50);
-    layout->addWidget(can_sender_checkbox, 0, 2);
-    layout->addWidget(serial_user_checkbox, 0, 4);
-    layout->addWidget(keys_label, 1, 1);
-    layout->addWidget(input_type_label, 1, 2);
-    layout->addWidget(pins_label, 1, 3);
-    layout->addWidget(active_state_label, 1, 4);
+    layout->addWidget(keys_label, 0, 1);
+    layout->addWidget(input_type_label, 0, 2);
+    layout->addWidget(pins_label, 0, 3);
+    layout->addWidget(active_state_label, 0, 4);
     setLayout(layout);
 }
 
@@ -543,7 +540,7 @@ void PinsConfigPage::initializePage()
                         auto* layout = dynamic_cast<QGridLayout *>(this->layout());
                         if(layout != nullptr)
                         {
-                            auto* digital_pin_active_state_item = layout->itemAtPosition(static_cast<int>(i) + 2, 4);
+                            auto* digital_pin_active_state_item = layout->itemAtPosition(static_cast<int>(i) + 1, 4);
                             if(digital_pin_active_state_item != nullptr)
                             {
                                 auto* digital_pin_active_state_widget = digital_pin_active_state_item->widget();
@@ -552,7 +549,7 @@ void PinsConfigPage::initializePage()
                                     digital_pin_active_state_widget->setEnabled(index == 0);
                                 }
                             }
-                            auto* key_select_item = layout->itemAtPosition(static_cast<int>(i) + 2, 3);
+                            auto* key_select_item = layout->itemAtPosition(static_cast<int>(i) + 1, 3);
                             if(key_select_item != nullptr)
                             {
                                 auto* key_select_widget = key_select_item->widget();
@@ -583,10 +580,10 @@ void PinsConfigPage::initializePage()
                             }
                         }
                     });
-            layout->addWidget(key_label, static_cast<int>(i) + 2, 1);
-            layout->addWidget(pin_type_select, static_cast<int>(i) + 2, 2);
-            layout->addWidget(key_select, static_cast<int>(i) + 2, 3);
-            layout->addWidget(digital_pin_active_state_select, static_cast<int>(i) + 2, 4);
+            layout->addWidget(key_label, static_cast<int>(i) + 1, 1);
+            layout->addWidget(pin_type_select, static_cast<int>(i) + 1, 2);
+            layout->addWidget(key_select, static_cast<int>(i) + 1, 3);
+            layout->addWidget(digital_pin_active_state_select, static_cast<int>(i) + 1, 4);
             registerField(tr("key_%1_pin").arg(QString::fromStdString(key_handler.key)), key_select, "currentText", "currentTextChanged");
             registerField(tr("key_%1_pin_type").arg(QString::fromStdString(key_handler.key)), pin_type_select, "currentText", "currentTextChanged");
             registerField(tr("key_%1_digital_pin_active_state").arg(QString::fromStdString(key_handler.key)), digital_pin_active_state_select, "currentText", "currentTextChanged");
@@ -650,6 +647,201 @@ bool PinsConfigPage::validatePage()
 
     QSettings settings;
     settings.setValue("arduino_type", arduino_select->currentText());
+    return true;
+}
+
+CodeConfigPage::CodeConfigPage(QWidget *parent)
+    : QWizardPage(parent)
+{
+    setTitle(tr("Configurações do código gerado para plataforma"));
+    setSubTitle(tr("Configurações gerais relacionadas ao código fonte produzido"));
+    can_sender_checkbox = new QCheckBox(tr("A ECU envia mensagens pelo barremento CAN"));
+    serial_user_checkbox = new QCheckBox(tr("A ECU faz uso da interface serial"));
+    ecu_address_label = new QLabel(tr("Endereço da ECU"));
+    ecu_address_label->setMinimumWidth(150);
+    ecu_address_label->setWordWrap(true);
+    ecu_address_line_edit = new QLineEdit;
+    ecu_address_line_edit->setFixedWidth(50);
+    ecu_address_label->setBuddy(ecu_address_line_edit);
+    ecu_address_line_validator = new QIntValidator(0, 0xFF);
+    ecu_address_line_edit->setValidator(ecu_address_line_validator);
+
+    registerField("can_sender", can_sender_checkbox);
+    registerField("serial_user", serial_user_checkbox);
+    registerField("ecu_address*", ecu_address_line_edit);
+
+    auto *layout = new QGridLayout;
+    layout->addWidget(can_sender_checkbox, 0, 0);
+    layout->addWidget(serial_user_checkbox, 1, 0);
+    layout->addWidget(ecu_address_label, 0, 1);
+    layout->addWidget(ecu_address_line_edit, 1, 1);
+    setLayout(layout);
+
+    setButtonText(QWizard::NextButton, tr("&Gerar"));
+}
+
+void CodeConfigPage::initializePage()
+{
+    auto handlers = code_generator::util::read_def(field("def_file").toString().toStdString());
+    code_generator::util::SystemTasksInfo tasks_info(std::get<0>(handlers).size(), std::get<1>(handlers).size() != 0,
+                                                     true, std::get<3>(handlers).declared,
+                                                     std::get<2>(handlers).size() != 0, std::get<4>(handlers).declared,
+                                                     true);
+
+    auto* layout = dynamic_cast<QGridLayout*>(this->layout());
+    auto grid_line_counter = 2;
+    if(tasks_info.can_send_task_used && !field("can_send_task_stack_size").isValid())
+    {
+        auto* can_send_task_stack_size_label = new QLabel(tr("Tamanho da stack de can_send_task"));
+        can_send_task_stack_size_label->setWordWrap(true);
+        auto* can_send_task_stack_size_line_edit = new QLineEdit;
+        can_send_task_stack_size_label->setBuddy(can_send_task_stack_size_line_edit);
+        auto* can_send_task_stack_size_validator = new QIntValidator(0, 512);
+        can_send_task_stack_size_line_edit->setValidator(can_send_task_stack_size_validator);
+        registerField("can_send_task_stack_size", can_send_task_stack_size_line_edit);
+        layout->addWidget(can_send_task_stack_size_label, grid_line_counter, 0);
+        layout->addWidget(can_send_task_stack_size_line_edit, grid_line_counter, 1);
+        grid_line_counter++;
+    }
+    if(tasks_info.can_recv_task_used && !field("can_recv_task_stack_size").isValid())
+    {
+        auto* can_recv_task_stack_size_label = new QLabel(tr("Tamanho da stack de can_recv_task"));
+        can_recv_task_stack_size_label->setWordWrap(true);
+        auto* can_recv_task_stack_size_line_edit = new QLineEdit;
+        can_recv_task_stack_size_label->setBuddy(can_recv_task_stack_size_line_edit);
+        auto* can_recv_task_stack_size_validator = new QIntValidator(0, 512);
+        can_recv_task_stack_size_line_edit->setValidator(can_recv_task_stack_size_validator);
+        registerField("can_recv_task_stack_size", can_recv_task_stack_size_line_edit);
+        layout->addWidget(can_recv_task_stack_size_label, grid_line_counter, 0);
+        layout->addWidget(can_recv_task_stack_size_line_edit, grid_line_counter, 1);
+        grid_line_counter++;
+    }
+    if(tasks_info.pins_reader_task_used && !field("pins_reader_task_stack_size").isValid())
+    {
+        auto* pins_reader_task_stack_size_label = new QLabel(tr("Tamanho da stack de pins_reader_task"));
+        pins_reader_task_stack_size_label->setWordWrap(true);
+        auto* pins_reader_task_stack_size_line_edit = new QLineEdit;
+        pins_reader_task_stack_size_label->setBuddy(pins_reader_task_stack_size_line_edit);
+        auto* pins_reader_task_stack_size_validator = new QIntValidator(0, 512);
+        pins_reader_task_stack_size_line_edit->setValidator(pins_reader_task_stack_size_validator);
+
+        auto* pins_reader_task_period_label = new QLabel(tr("Ciclo de varredura de pins_reader_task (ms)"));
+        pins_reader_task_period_label->setWordWrap(true);
+        auto* pins_reader_task_period_line_edit = new QLineEdit;
+        pins_reader_task_period_label->setBuddy(pins_reader_task_period_line_edit);
+        auto* pins_reader_task_period_validator = new QIntValidator(0, std::numeric_limits<int>::max());
+        pins_reader_task_period_line_edit->setValidator(pins_reader_task_period_validator);
+
+        registerField("pins_reader_task_stack_size", pins_reader_task_stack_size_line_edit);
+        registerField("pins_reader_task_period", pins_reader_task_period_line_edit);
+
+        layout->addWidget(pins_reader_task_stack_size_label, grid_line_counter, 0);
+        layout->addWidget(pins_reader_task_stack_size_line_edit, grid_line_counter, 1);
+        layout->addWidget(pins_reader_task_period_label, grid_line_counter + 1, 0);
+        layout->addWidget(pins_reader_task_period_line_edit, grid_line_counter + 1, 1);
+
+        grid_line_counter += 2;
+    }
+    if(tasks_info.timer_task_used)
+    {
+        for(const auto& timer_task : std::get<0>(handlers))
+        {
+            const auto timer_task_str = tr("timer_task_%1").arg(timer_task.name.c_str());
+            const auto timer_task_stack_size_field_name = tr("timer_task_%1_stack_size").arg(timer_task.name.c_str());
+            if(!field(timer_task_stack_size_field_name).isValid())
+            {
+                auto* timer_task_stack_size_label = new QLabel(tr("Tamanho da stack de %1").arg(timer_task_str));
+                timer_task_stack_size_label->setWordWrap(true);
+                auto* timer_task_stack_size_line_edit = new QLineEdit;
+                timer_task_stack_size_label->setBuddy(timer_task_stack_size_line_edit);
+                auto* timer_task_stack_size_validator = new QIntValidator(0, 512);
+                timer_task_stack_size_line_edit->setValidator(timer_task_stack_size_validator);
+                registerField(timer_task_stack_size_field_name, timer_task_stack_size_line_edit);
+                layout->addWidget(timer_task_stack_size_label, grid_line_counter, 0);
+                layout->addWidget(timer_task_stack_size_line_edit, grid_line_counter, 1);
+                grid_line_counter++;
+            }
+        }
+    }
+
+}
+
+bool CodeConfigPage::validatePage()
+{
+    auto handlers = code_generator::util::read_def(field("def_file").toString().toStdString());
+    code_generator::util::SystemTasksInfo tasks_info(std::get<0>(handlers).size(), std::get<1>(handlers).size() != 0,
+                                                     true, std::get<3>(handlers).declared,
+                                                     std::get<2>(handlers).size() != 0, std::get<4>(handlers).declared,
+                                                     true);
+
+    auto is_power_of_2 = [](int n){ return (n != 0) && ((n & (n-1)) == 0); };
+    if(tasks_info.can_send_task_used)
+    {
+        auto can_send_task_stack_size_str = field("can_send_task_stack_size").toString();
+        if(!can_send_task_stack_size_str.isEmpty())
+        {
+            auto can_send_task_stack_size = can_send_task_stack_size_str.toInt();
+            if(!is_power_of_2(can_send_task_stack_size))
+            {
+                QMessageBox msg;
+                msg.setText(tr("O tamanho da stack de can_send_task não é uma potência de 2"));
+                msg.exec();
+                return false;
+            }
+        }
+    }
+    if(tasks_info.can_recv_task_used)
+    {
+        auto can_recv_task_stack_size_str = field("can_recv_task_stack_size").toString();
+        if(!can_recv_task_stack_size_str.isEmpty())
+        {
+            auto can_recv_task_stack_size = can_recv_task_stack_size_str.toInt();
+            if(!is_power_of_2(can_recv_task_stack_size))
+            {
+                QMessageBox msg;
+                msg.setText(tr("O tamanho da stack de can_recv_task não é uma potência de 2"));
+                msg.exec();
+                return false;
+            }
+        }
+    }
+    if(tasks_info.pins_reader_task_used)
+    {
+        auto pins_reader_task_stack_size_str = field("pins_reader_task_stack_size").toString();
+        if(!pins_reader_task_stack_size_str.isEmpty())
+        {
+            auto pins_reader_task_stack_size = pins_reader_task_stack_size_str.toInt();
+            if(!is_power_of_2(pins_reader_task_stack_size))
+            {
+                QMessageBox msg;
+                msg.setText(tr("O tamanho da stack de pins_reader_task não é uma potência de 2"));
+                msg.exec();
+                return false;
+            }
+        }
+    }
+    if(tasks_info.timer_task_used)
+    {
+        for(const auto& timer_task : std::get<0>(handlers))
+        {
+            const auto timer_task_str = tr("timer_task_%1").arg(timer_task.name.c_str());
+            const auto timer_task_stack_size_field_name = tr("timer_task_%1_stack_size").arg(timer_task.name.c_str());
+            auto timer_task_stack_size_str = field(timer_task_stack_size_field_name).toString();
+            if(!timer_task_stack_size_str.isEmpty())
+            {
+                auto timer_task_stack_size = timer_task_stack_size_str.toInt();
+                if(!is_power_of_2(timer_task_stack_size))
+                {
+                    QMessageBox msg;
+                    msg.setText(tr("O tamanho da stack de %1 não é uma potência de 2").arg(timer_task_str));
+                    msg.exec();
+                    return false;
+                }
+            }
+        }
+    }
+    QSettings settings;
+    settings.setValue("ecu_address", ecu_address_line_edit->text());
     settings.setValue("can_sender", can_sender_checkbox->isChecked());
     settings.setValue("serial_user", serial_user_checkbox->isChecked());
     return true;
@@ -683,6 +875,44 @@ void BuildPage::initializePage()
 
     auto can_sender = field("can_sender").toBool();
     auto serial_user = field("serial_user").toBool();
+
+    auto ecu_address = field("ecu_address").toString().toUInt();
+
+    std::map<std::string, int> stack_sizes;
+    int pins_reader_period = -1;
+    auto handlers = code_generator::util::read_def(def_file.toStdString());
+    code_generator::util::SystemTasksInfo tasks_info(std::get<0>(handlers).size(), std::get<1>(handlers).size() != 0,
+                                                     true, std::get<3>(handlers).declared,
+                                                     std::get<2>(handlers).size() != 0, std::get<4>(handlers).declared,
+                                                     true);
+    if(tasks_info.can_send_task_used)
+    {
+        auto can_send_task_stack_size_str = field("can_send_task_stack_size").toString();
+        stack_sizes["can_send_task"] = !can_send_task_stack_size_str.isEmpty() ? can_send_task_stack_size_str.toInt() : -1;
+    }
+    if(tasks_info.can_recv_task_used)
+    {
+        auto can_recv_task_stack_size_str = field("can_recv_task_stack_size").toString();
+        stack_sizes["can_recv_task"] = !can_recv_task_stack_size_str.isEmpty() ? can_recv_task_stack_size_str.toInt() : -1;
+    }
+    if(tasks_info.pins_reader_task_used)
+    {
+        auto pins_reader_task_stack_size_str = field("pins_reader_task_stack_size").toString();
+        stack_sizes["pins_reader_task"] = !pins_reader_task_stack_size_str.isEmpty() ? pins_reader_task_stack_size_str.toInt() : -1;
+        auto pins_reader_task_period_str = field("pins_reader_task_period").toString();
+        pins_reader_period = !pins_reader_task_period_str.isEmpty() ? pins_reader_task_period_str.toInt() : -1;
+    }
+    if(tasks_info.timer_task_used)
+    {
+        for(const auto& timer_task : std::get<0>(handlers))
+        {
+            const auto timer_task_str = tr("timer_task_%1").arg(timer_task.name.c_str());
+            const auto timer_task_stack_size_field_name = tr("timer_task_%1_stack_size").arg(timer_task.name.c_str());
+            auto timer_task_stack_size_str = field(timer_task_stack_size_field_name).toString();
+            stack_sizes[timer_task_str.toStdString()] = !timer_task_stack_size_str.isEmpty() ? timer_task_stack_size_str.toInt() : -1;
+        }
+    }
+
 
     std::vector<code_generator::ast::TimerHandler> timer_handlers;
     std::vector<code_generator::ast::KeyHandler> key_handlers;
@@ -735,6 +965,9 @@ void BuildPage::initializePage()
             .set_key_mapping(pins_associated_to_keys.toStdString())
             .is_can_sender(can_sender)
             .use_serial_interface(serial_user)
+            .set_ecu_address(ecu_address)
+            .set_stack_sizes(stack_sizes)
+            .set_pins_reader_task_period(pins_reader_period)
             .configure();
     QString build_output_str = cd.execute_build();
     setField("build_text_edit",build_output_str);

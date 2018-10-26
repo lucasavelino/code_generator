@@ -39,7 +39,7 @@ namespace code_generator
                                                            output_exe_file_name};
 
 
-            oil_generator.generate(timer_handlers, tasks_info);
+            oil_generator.generate(timer_handlers, stack_sizes, pins_reader_task_period, tasks_info);
 
             code_generator::MsgTypesFileGenerator msg_types_generator{output_msg_types_header_file_path,
                                                                       R"(:/code_templates/msg_types_header.txt)",
@@ -75,7 +75,7 @@ namespace code_generator
                                                                 R"(:/code_templates/pgn_name_case.txt)",
                                                                 R"(:/code_templates/timer_task_code.txt)",
                                                                 R"(:/code_templates/pins_reader_task_code.txt)"};
-            cpp_file_generator.generate(functions, timer_tasks, key_tasks, pgn_name_tasks, global_variables_declaration, pgn_all_task, dll_load_task, tasks_info);
+            cpp_file_generator.generate(functions, timer_tasks, key_tasks, pgn_name_tasks, global_variables_declaration, pgn_all_task, dll_load_task, ecu_address, tasks_info);
             QFile(J1939Includes_header_output_path).remove();
             QFile(message_queue_header_output_path).remove();
             QFile(windows_types_header_output_path).remove();
@@ -185,6 +185,9 @@ namespace code_generator
         bool flash{};
         bool can_sender{};
         bool serial_user{};
+        unsigned int ecu_address;
+        std::map<std::string, int> stack_sizes;
+        int pins_reader_task_period;
         friend class CodeGeneratorPropertiesManager;
     };
 
@@ -282,6 +285,24 @@ namespace code_generator
         CodeGeneratorPropertiesManager& use_serial_interface(bool serial_user)
         {
             cd.serial_user = serial_user;
+            return *this;
+        }
+
+        CodeGeneratorPropertiesManager& set_ecu_address(unsigned int ecu_address)
+        {
+            cd.ecu_address = ecu_address;
+            return *this;
+        }
+
+        CodeGeneratorPropertiesManager& set_stack_sizes(const std::map<std::string, int>& stack_sizes)
+        {
+            cd.stack_sizes = stack_sizes;
+            return *this;
+        }
+
+        CodeGeneratorPropertiesManager& set_pins_reader_task_period(int pins_reader_task_period)
+        {
+            cd.pins_reader_task_period = pins_reader_task_period;
             return *this;
         }
 

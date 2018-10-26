@@ -18,6 +18,7 @@ class QComboBox;
 class QTextEdit;
 class QTimer;
 class QCheckBox;
+class QIntValidator;
 QT_END_NAMESPACE
 
 class CodeGeneratorWizard : public QWizard
@@ -113,8 +114,22 @@ public:
 private:
     QComboBox *arduino_select;
     QLabel *arduino_img_label;
+};
+
+class CodeConfigPage : public QWizardPage
+{
+    Q_OBJECT
+
+public:
+    CodeConfigPage(QWidget *parent = nullptr);
+    void initializePage() override;
+    bool validatePage() override;
+private:
     QCheckBox *can_sender_checkbox;
     QCheckBox *serial_user_checkbox;
+    QLabel* ecu_address_label;
+    QLineEdit* ecu_address_line_edit;
+    QIntValidator *ecu_address_line_validator;
 };
 
 class BuildPage : public QWizardPage
