@@ -20,7 +20,6 @@
         <file>code_templates/setup_func.txt</file>
         <file>code_templates/timer_task_code.txt</file>
         <file>code_templates/timer_task_oil.txt</file>
-        <file>images/cg_icon.png</file>
         <file>target_header_files/mutual_exclusion_handler_trampoline.h</file>
         <file>code_templates/can_recv_task_oil.txt</file>
         <file>code_templates/can_recv_task.txt</file>
@@ -29,5 +28,6 @@
         <file>target_header_files/include_trampoline.h</file>
         <file>code_templates/pgn_name_case.txt</file>
         <file>code_templates/pgn_name_switch.txt</file>
+        <file>images/cg_icon.png</file>
     </qresource>
 </RCC>

@@ -331,6 +331,9 @@ namespace code_generator
                     } else {
                         functions.push_back(text);
                     }
+                } else
+                {
+                    functions.push_back(text);
                 }
             }
             return std::make_tuple(timer_tasks,key_tasks,pgn_name_tasks,msg_handler_pgn_all,on_dll_load_task,functions,error_ts.readAll());

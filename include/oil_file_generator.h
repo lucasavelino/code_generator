@@ -67,8 +67,8 @@ namespace code_generator
                 auto pins_reader_task_stack_size = stack_sizes.at("pins_reader_task");
                 Replacer pins_reader_task_replacer{pins_reader_task_oil_file_name};
                 pins_reader_task_replacer.add_tag("PinsReaderTaskTime", (pins_reader_task_period > 0 ?
-                                                                         QString::number(static_cast<unsigned int>(pins_reader_task_period/1.024)) :
-                                                                         QString::number(static_cast<unsigned int>(300/1.024))))
+                                                                         QString::number(static_cast<unsigned int>(std::round(pins_reader_task_period/1.024))) :
+                                                                         QString::number(static_cast<unsigned int>(std::round(300/1.024)))))
                                          .add_tag("PinsReaderTaskPriority",
                                                   QString::number(1U))
                                          .add_tag("PinsReaderTaskStackSize", (pins_reader_task_stack_size > 0 ?
@@ -111,7 +111,7 @@ namespace code_generator
                     auto timer_task_stack_size = stack_sizes.at(timer_task_str.toStdString());
                     Replacer timer_task_oil_replacer{timer_task_oil_file_name};
                     timer_task_oil_replacer.add_tag("TaskName", QString("OnTimer_") + timer_handler.name.c_str() + "_" + QString::number(timer_handler.milliseconds))
-                            .add_tag("TaskTimerTime",QString::number(static_cast<unsigned int>(timer_handler.milliseconds/1.024F)))
+                            .add_tag("TaskTimerTime",QString::number(static_cast<unsigned int>(std::round(timer_handler.milliseconds/1.024))))
                             .add_tag("TaskPriority",QString::number(task_priority))
                             .add_tag("TimerTaskStackSize", (timer_task_stack_size > 0 ?
                                                             QString::number(timer_task_stack_size) :

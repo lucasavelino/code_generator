@@ -122,14 +122,14 @@ namespace code_generator
                                    << (tasks_info.timer_task_used ? ",\n" : "\n");
                 if(tasks_info.message_handler_pgn_all_used)
                 {
-                    message_handler_prototype_list << "void OnPGN_All(J1939_MSG&);";
+                    message_handler_prototype_list << "void OnPGN_All(J1939_MSG&);\n";
                 }
                 if(tasks_info.message_handler_pgn_name_used)
                 {
                     for(const auto& pgn_name_task : pgn_name_tasks)
                     {
                         message_handler_prototype_list << "void OnPGNName_" << pgn_name_task.type_name.c_str()
-                                                       << "(" << pgn_name_task.type_name.c_str() << ");";
+                                                       << "(" << pgn_name_task.type_name.c_str() << ");\n";
                     }
                 }
             }
@@ -154,6 +154,17 @@ namespace code_generator
                 send_msg_task_list << "\t" << timer_task.task_name.c_str();
             }
 
+            QString functions_prototype_list_str;
+            QTextStream functions_prototype_list(&functions_prototype_list_str);
+            for(const auto& func : functions)
+            {
+                auto func_signature_end_index = func.find_first_of(")");
+                if(func_signature_end_index != std::string::npos)
+                {
+                    functions_prototype_list << func.substr(0,func_signature_end_index).c_str() << ");\n";
+                }
+            }
+
             code_generator::Replacer declarations_replacer{declarations_file_name};
             declarations_replacer.add_tag("DeclareCanSendResourcesAndEvents",
                                           tasks_info.can_send_task_used ?
@@ -171,6 +182,7 @@ namespace code_generator
                                  .add_tag("MessageHandlersPrototypeList", message_handler_prototype_list.readAll())
                                  .add_tag("SendMsgTaskList", send_msg_task_list.readAll())
                                  .add_tag("DllLoadHandlerPrototype", dll_load_handler_prototype.readAll())
+                                 .add_tag("FunctionsPrototypeList", functions_prototype_list.readAll())
                                  .add_tag("SendMsgReceiver", tasks_info.can_send_task_used ?
                                                                 "	can_send_task" :
                                                                 "")
