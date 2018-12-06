@@ -16,10 +16,13 @@ static const auto digital_pin_used_by_mcp2515 =
                      pin) != std::end(digital_pins_used_by_mcp2515);
 };
 
-CodeGeneratorWizard::CodeGeneratorWizard(QWidget *parent) :
-    QWizard(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint)
+CodeGeneratorWizard::CodeGeneratorWizard(bool& _configure_new, QWidget *parent) :
+    QWizard(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
+    configure_new(_configure_new)
 {
+    configure_new = false;
     setButtonText(WizardButton::NextButton,tr("&Avançar >"));
+    setButtonText(WizardButton::CommitButton,tr("&Avançar >"));
     setButtonText(WizardButton::BackButton,tr("< &Voltar"));
     setButtonText(WizardButton::CancelButton,tr("&Cancelar"));
     setButtonText(WizardButton::FinishButton,tr("&Finalizar"));
@@ -394,6 +397,8 @@ OutputConfigsPage::OutputConfigsPage(QWidget *parent)
     layout->addWidget(output_prefix_label, 1, 0);
     layout->addWidget(output_prefix_line_edit, 1, 1);
     setLayout(layout);
+
+    setCommitPage(true);
 }
 
 bool OutputConfigsPage::validatePage()
@@ -1048,8 +1053,8 @@ ComPortPage::ComPortPage(QWidget *parent)
 LoadPage::LoadPage(QWidget *parent)
     : QWizardPage(parent)
 {
-    setTitle(tr("Geração e compilação do código fonte"));
-    setSubTitle(tr("Veja o resultado do processo de geração do código e compilação"));
+    setTitle(tr("Carregamento para o hardware"));
+    setSubTitle(tr("Veja o resultado do processo de carregamento para a plataforma de hardware"));
 
     load_text_edit = new QTextEdit;
     load_text_edit->setReadOnly(true);
@@ -1084,7 +1089,19 @@ LastPage::LastPage(QWidget *parent)
     label = new QLabel(tr("O assistente terminou o serviço!"));
     label->setWordWrap(true);
 
+    restart_button = new QPushButton(tr("Configurar nova ECU"));
+    connect(restart_button, &QPushButton::clicked, [this](){
+        dynamic_cast<CodeGeneratorWizard*>(this->wizard())->configure_new = true;
+        this->wizard()->close();
+    });
+
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(label);
+    layout->addWidget(restart_button,0,Qt::AlignLeft);
     setLayout(layout);
+}
+
+int LastPage::nextId() const
+{
+    return -1;
 }

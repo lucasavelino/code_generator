@@ -175,7 +175,7 @@ public:
 		return *this;
 	}
 
-	operator uint32_t()
+	operator uint32_t() const
 	{
 		return extendedId;
 	}

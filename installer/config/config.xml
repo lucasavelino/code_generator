@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>Code Generator</Name>
+    <Version>1.0.0</Version>
+    <Title>Code Generator Installer</Title>
+    <Publisher>Lucas Avelino</Publisher>
+    <StartMenuDir>Code Generator</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/code_generator</TargetDir>
+</Installer>

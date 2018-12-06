@@ -26,8 +26,10 @@ class CodeGeneratorWizard : public QWizard
     Q_OBJECT
 
 public:
-    explicit CodeGeneratorWizard(QWidget *parent = nullptr);
+    explicit CodeGeneratorWizard(bool& _configure_new, QWidget *parent = nullptr);
     void accept() override;
+
+    bool& configure_new;
 };
 
 class IntroPage : public QWizardPage
@@ -174,9 +176,10 @@ class LastPage : public QWizardPage
 
 public:
     LastPage(QWidget *parent = nullptr);
-
+    int nextId() const;
 private:
     QLabel *label;
+    QPushButton *restart_button;
 };
 
 #endif // CODE_GENERATOR_WIZARD_H

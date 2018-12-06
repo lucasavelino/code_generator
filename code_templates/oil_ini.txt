@@ -12,6 +12,9 @@ CPU busmaster {
       LINKER = "avr-gcc";
       ASSEMBLER = "avr-gcc";
       COPIER = "avr-objcopy";
+	  COMMONFLAGS = "-Os";
+	  CPPFLAGS = "-Os";
+	  LDFLAGS = "-Xlinker -Map=[#ExeFileName].map";
       SYSTEM = PYTHON;
 	  
       LIBRARY = mcp_can;

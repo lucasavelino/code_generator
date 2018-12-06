@@ -29,5 +29,6 @@
         <file>code_templates/pgn_name_case.txt</file>
         <file>code_templates/pgn_name_switch.txt</file>
         <file>images/cg_icon.png</file>
+        <file>images/SplashScreen.png</file>
     </qresource>
 </RCC>
