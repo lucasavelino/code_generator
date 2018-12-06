@@ -6,6 +6,7 @@
 #include <code_generator.h>
 #include <QSplashScreen>
 #include <QTimer>
+#include <QIcon>
 
 int main(int argc, char *argv[])
 {

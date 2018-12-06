@@ -5,5 +5,5 @@
     <Title>Code Generator Installer</Title>
     <Publisher>Lucas Avelino</Publisher>
     <StartMenuDir>Code Generator</StartMenuDir>
-    <TargetDir>@ApplicationsDir@/code_generator</TargetDir>
+    <TargetDir>@ApplicationsDir@/Code Generator</TargetDir>
 </Installer>

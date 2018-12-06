@@ -37,7 +37,6 @@ Component.prototype.createOperations = function()
 
     if (systemInfo.productType === "windows") {
         component.addOperation("CreateShortcut", "@TargetDir@/code_generator.exe", "@StartMenuDir@/code_generator.lnk",
-            "workingDirectory=@TargetDir@", "iconPath=%SystemRoot%/system32/SHELL32.dll",
-            "iconId=2", "description=Open README file");
+            "workingDirectory=@TargetDir@");
     }
 }
