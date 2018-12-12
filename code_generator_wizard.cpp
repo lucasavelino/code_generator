@@ -28,6 +28,11 @@ CodeGeneratorWizard::CodeGeneratorWizard(bool& _configure_new, QWidget *parent) 
     setButtonText(WizardButton::FinishButton,tr("&Finalizar"));
     setWindowIcon(QIcon(":/images/cg_icon.png"));
 
+    disconnect(button(WizardButton::CancelButton), SIGNAL(clicked()), this, SLOT(reject()));
+    connect(button(WizardButton::CancelButton), SIGNAL(clicked()), this, SLOT(close()));
+
+    resize(660, 620);
+
     // AeroStyle's (default, on windows 10) close button is not working properly
     setWizardStyle(ModernStyle);
 
@@ -55,6 +60,26 @@ CodeGeneratorWizard::CodeGeneratorWizard(bool& _configure_new, QWidget *parent) 
     addPage(last_page);
 
     setWindowTitle(tr("Code Generator"));
+}
+
+
+void CodeGeneratorWizard::closeEvent(QCloseEvent* event)
+{
+    QMessageBox exit_msg;
+    exit_msg.setText(QString("Você tem certeza que deseja sair?"));
+    exit_msg.addButton(QMessageBox::Yes);
+    exit_msg.button(QMessageBox::Yes)->setText("Sim");
+    exit_msg.addButton(QMessageBox::No);
+    exit_msg.button(QMessageBox::No)->setText("Não");
+    connect(exit_msg.button(QMessageBox::Yes), SIGNAL(clicked()), &exit_msg, SLOT(accept()));
+    connect(exit_msg.button(QMessageBox::No), SIGNAL(clicked()), &exit_msg, SLOT(reject()));
+    if(exit_msg.exec() == QDialog::Accepted)
+    {
+        event->accept();
+    } else
+    {
+        event->ignore();
+    }
 }
 
 void CodeGeneratorWizard::accept()
@@ -444,6 +469,7 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     arduino_select->addItem(tr("Arduino UNO"));
     arduino_select->addItem(tr("Arduino NANO"));
     arduino_img_label = new QLabel;
+    arduino_img_label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     connect(arduino_select,
             QOverload<int>::of(&QComboBox::activated),
@@ -466,7 +492,6 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
                                                         )
                                                  );
                 }
-
             });
 
     registerField("arduino_type", arduino_select, "currentText", "currentTextChanged");
@@ -485,6 +510,7 @@ PinsConfigPage::PinsConfigPage(QWidget *parent)
     layout->addWidget(input_type_label, 0, 2);
     layout->addWidget(pins_label, 0, 3);
     layout->addWidget(active_state_label, 0, 4);
+    layout->setSizeConstraint(QLayout::SetMinimumSize);
     setLayout(layout);
 }
 
@@ -668,7 +694,7 @@ CodeConfigPage::CodeConfigPage(QWidget *parent)
     ecu_address_line_edit = new QLineEdit;
     ecu_address_line_edit->setFixedWidth(50);
     ecu_address_label->setBuddy(ecu_address_line_edit);
-    ecu_address_line_validator = new QIntValidator(0, 0xFF);
+    ecu_address_line_validator = new code_generator::util::HexByteValidator();
     ecu_address_line_edit->setValidator(ecu_address_line_validator);
 
     registerField("can_sender", can_sender_checkbox);
@@ -881,7 +907,8 @@ void BuildPage::initializePage()
     auto can_sender = field("can_sender").toBool();
     auto serial_user = field("serial_user").toBool();
 
-    auto ecu_address = field("ecu_address").toString().toUInt();
+    auto status = false;
+    auto ecu_address = field("ecu_address").toString().toUInt(&status, 16);
 
     std::map<std::string, int> stack_sizes;
     int pins_reader_period = -1;

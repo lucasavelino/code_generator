@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     QApplication::setApplicationVersion("1.0");
 
     auto *splash_screen = new QSplashScreen;
-    splash_screen->setPixmap(QPixmap(R"(:/images/SplashScreen.png)").scaled(800,500,Qt::KeepAspectRatio));
+    splash_screen->setPixmap(QPixmap(R"(:/images/SplashScreen.png)").scaled(600,375,Qt::KeepAspectRatio));
     splash_screen->show();
 
     auto cont = false;

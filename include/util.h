@@ -8,6 +8,7 @@
 #include <boost/fusion/include/std_pair.hpp>
 #include <QFile>
 #include <QTextStream>
+#include <QValidator>
 #include <QDebug>
 
 namespace code_generator
@@ -400,6 +401,21 @@ namespace code_generator
             phrase_parse(key_mapping_str.begin(), key_mapping_str.end(), key_pin_map_rule, space, key_pin_map);
             return key_pin_map;
         }
+
+        class HexByteValidator : public QValidator
+        {
+            QValidator::State validate(QString& input, int&) const
+            {
+                QRegExp rxAcceptable("^([0-9a-fA-F]){1,2}$");
+                QRegExp rxIntermediate("^$");
+                if(rxAcceptable.exactMatch(input)) {
+                    return QValidator::Acceptable;
+                } else if (rxIntermediate.exactMatch(input)) {
+                    return QValidator::Intermediate;
+                }
+                return QValidator::Invalid;
+            }
+        };
     };
 }
 

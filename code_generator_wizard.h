@@ -30,6 +30,9 @@ public:
     void accept() override;
 
     bool& configure_new;
+
+protected:
+    void closeEvent(QCloseEvent* event);
 };
 
 class IntroPage : public QWizardPage
@@ -131,7 +134,7 @@ private:
     QCheckBox *serial_user_checkbox;
     QLabel* ecu_address_label;
     QLineEdit* ecu_address_line_edit;
-    QIntValidator *ecu_address_line_validator;
+    code_generator::util::HexByteValidator *ecu_address_line_validator;
 };
 
 class BuildPage : public QWizardPage
